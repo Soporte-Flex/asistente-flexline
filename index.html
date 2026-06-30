@@ -4,19 +4,19 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Asistente Flexline</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', sans-serif; background: #f0f2f7; }
-    #root { height: 100vh; }
+    #root { height: 100vh; overflow: auto; }
   </style>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="react">
-import { useState } from "react";
+  <script type="text/babel" data-type="module">
+const { useState } = React;
 
 const SITUACIONES = [
   { val: "consulta", label: "Consulta general" },
@@ -105,24 +105,75 @@ const DERIVACIONES_INTERNAS = [
     grupo: "📊 Contabilidad / Análisis de Cuentas",
     color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
     items: [
-      { label: "⚠️ Saldo incorrecto post-cierre", texto: "Solicito tu apoyo para analizar el siguiente caso.\n\nEl cliente presenta saldo cero en la cuenta [CUENTA] al cierre del ejercicio anual [AÑO], sin embargo en el período [AÑO+1] aparece un saldo que no debería existir. Adjunto análisis de cuenta ficha de ambos períodos para tu revisión.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
-      { label: "⚠️ Diferencia en cierre anual", texto: "Solicito tu apoyo para revisar diferencia detectada en el cierre anual [AÑO].\n\nSe presenta inconsistencia en la cuenta [CUENTA] de la empresa [EMPRESA]. El saldo no cuadra con lo esperado al finalizar el período.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "⚠️ Saldo incorrecto post-cierre", texto: "Solicito tu apoyo para analizar el siguiente caso.
+
+El cliente presenta saldo cero en la cuenta [CUENTA] al cierre del ejercicio anual [AÑO], sin embargo en el período [AÑO+1] aparece un saldo que no debería existir. Adjunto análisis de cuenta ficha de ambos períodos para tu revisión.
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
+      { label: "⚠️ Diferencia en cierre anual", texto: "Solicito tu apoyo para revisar diferencia detectada en el cierre anual [AÑO].
+
+Se presenta inconsistencia en la cuenta [CUENTA] de la empresa [EMPRESA]. El saldo no cuadra con lo esperado al finalizar el período.
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
     ]
   },
   {
     grupo: "🗄️ Base de Datos / Correcciones",
     color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc",
     items: [
-      { label: "🔧 Corrección en BD requerida", texto: "Solicito tu apoyo para realizar una corrección directamente en base de datos.\n\nEl cliente presenta el siguiente inconveniente: [DESCRIPCIÓN DEL PROBLEMA]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
-      { label: "🔧 Registro duplicado en BD", texto: "Solicito tu apoyo para revisar y eliminar registro duplicado detectado en base de datos.\n\nTabla afectada: [TABLA]\nCriterio de duplicado: [DESCRIPCIÓN]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "🔧 Corrección en BD requerida", texto: "Solicito tu apoyo para realizar una corrección directamente en base de datos.
+
+El cliente presenta el siguiente inconveniente: [DESCRIPCIÓN DEL PROBLEMA]
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
+      { label: "🔧 Registro duplicado en BD", texto: "Solicito tu apoyo para revisar y eliminar registro duplicado detectado en base de datos.
+
+Tabla afectada: [TABLA]
+Criterio de duplicado: [DESCRIPCIÓN]
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
     ]
   },
   {
     grupo: "📄 Factura Electrónica / DTE",
     color: "#059669", bg: "#f0fdf4", border: "#6ee7b7",
     items: [
-      { label: "⚠️ Error emisión DTE", texto: "Solicito tu apoyo para revisar error en emisión de DTE.\n\nEl cliente no puede emitir documentos. Error reportado: [ERROR]\nTipo de documento: [TIPO DTE]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
-      { label: "⚠️ Documento no llegó al SII", texto: "Solicito tu apoyo para revisar documento que no llegó al SII.\n\nFolio: [FOLIO] — Tipo: [TIPO DTE] — Fecha: [FECHA]\nEl documento existe en Flexline pero no aparece en el SII.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "⚠️ Error emisión DTE", texto: "Solicito tu apoyo para revisar error en emisión de DTE.
+
+El cliente no puede emitir documentos. Error reportado: [ERROR]
+Tipo de documento: [TIPO DTE]
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
+      { label: "⚠️ Documento no llegó al SII", texto: "Solicito tu apoyo para revisar documento que no llegó al SII.
+
+Folio: [FOLIO] — Tipo: [TIPO DTE] — Fecha: [FECHA]
+El documento existe en Flexline pero no aparece en el SII.
+
+Datos de acceso:
+— Empresa: [EMPRESA]
+— Usuario: [USUARIO]
+— Clave: [CLAVE]
+— BD: [BD]" },
     ]
   },
 ];
@@ -170,7 +221,14 @@ const MODULOS_PLANTILLAS = [
     { tag: "Parámetro no graba", texto: "¡Hola! Si el parámetro no está grabando, asegúrate de hacer clic en Grabar después de cada cambio. Algunos requieren cerrar sesión para tomar efecto. ¿Probaste cerrando sesión?" },
     { tag: "Usuario sin acceso a módulo", texto: "¡Hola! Si un usuario no puede acceder a un módulo, hay que revisar los permisos en Seguridad Flexline → Flexsegm. ¿Tienes acceso a la configuración de seguridad?" },
     { tag: "Período contable cerrado por error", texto: "¡Hola! Si cerraste un período por error, podemos reabrirlo desde Comunes → Administración de Períodos. ¿Quieres que te guiemos paso a paso?" },
-    { tag: "Paridades — Cómo importar desde WebService", texto: "¡Hola! Para importar paridades desde WebService en Flexline, sigue estos pasos:\n1. Ve a Comunes → Mantenedor de Paridades\n2. Selecciona Administración → Ingreso Paridades Masivas → Importar desde WebService\n3. Selecciona la Moneda de Destino, el código WebService y los períodos a importar\n4. Haz clic en Obtener desde WS → Aceptar → Importar\n5. Al finalizar puedes revisar el LOG de importación para validar los registros grabados\n\nNota: necesitas tener permisos sobre el programa MANTENPARIDAD en Seguridad de Aplicaciones. ¿Tienes ese acceso?" },
+    { tag: "Paridades — Cómo importar desde WebService", texto: "¡Hola! Para importar paridades desde WebService en Flexline, sigue estos pasos:
+1. Ve a Comunes → Mantenedor de Paridades
+2. Selecciona Administración → Ingreso Paridades Masivas → Importar desde WebService
+3. Selecciona la Moneda de Destino, el código WebService y los períodos a importar
+4. Haz clic en Obtener desde WS → Aceptar → Importar
+5. Al finalizar puedes revisar el LOG de importación para validar los registros grabados
+
+Nota: necesitas tener permisos sobre el programa MANTENPARIDAD en Seguridad de Aplicaciones. ¿Tienes ese acceso?" },
     { tag: "Paridades — API Key SBIF", texto: "¡Hola! Para obtener el API Key necesario para importar paridades desde WebService, debes solicitarla directamente desde http://api.sbif.cl/uso-de-api-key.html y completar el formulario de obtención. ¿Ya cuentas con esa clave?" },
     { tag: "Paridades — Importar otra moneda", texto: "¡Hola! Para importar paridades de otra moneda, debes repetir el proceso desde el Mantenedor de Paridades → Administración → Ingreso Paridades Masivas → Importar desde WebService, y en el paso de configuración seleccionar la nueva moneda a importar. ¿Quieres que te guiemos?" },
     { tag: "Paridades — Validar información importada", texto: "¡Hola! Una vez finalizada la importación, puedes validar los valores en el mismo Mantenedor de Paridades seleccionando el período y la moneda correspondiente. El sistema mostrará todas las fechas y valores grabados. 😊" },
@@ -181,8 +239,18 @@ const MODULOS_PLANTILLAS = [
     { tag: "Plan de cuentas — cuenta inexistente", texto: "¡Hola! La cuenta contable que intentas usar no existe en el plan de cuentas de Flexline. ¿Puedes confirmarnos el código de la cuenta para verificarlo?" },
     { tag: "Centro de costo — no válido", texto: "¡Hola! El centro de costo ingresado no está registrado en Flexline. ¿Puedes verificar el código del centro de costo? Lo revisamos contigo." },
     { tag: "Cierre contable — proceso", texto: "¡Hola! El proceso de cierre contable afecta a todos los módulos. Antes de ejecutarlo verifica que todos los documentos del período estén ingresados y cuadrados. ¿Necesitas que te orientemos en el proceso?" },
-    { tag: "Plantilla comprobante — Cómo crear", texto: "¡Hola! Para crear una plantilla de comprobante contable en Flexline, sigue estos pasos:\n1. Ve al Mantenedor de Comprobantes y tabula hasta el final como si fueras a crear uno nuevo\n2. Ve a Administración → Consulta de Comprobantes\n3. Elige el tipo de comprobante que usarás como plantilla\n4. En Opciones → Guardar como Plantilla → Grabar\n¿Quieres que te guiemos en el proceso?" },
-    { tag: "Plantilla comprobante — Cómo aplicar", texto: "¡Hola! Para aplicar una plantilla de comprobante ya creada:\n1. Ingresa al Mantenedor de Comprobantes y tabula hasta el final\n2. Ve a Administración → Consulta de Comprobantes\n3. En Opciones → Aplicar Plantilla → Consulta de Plantillas\n4. Selecciona la plantilla guardada y Graba\nRecuerda que al quedar en estado Cuadrado debes actualizar con el Actualizador Masivo. ¿Tienes la plantilla ya creada?" },
+    { tag: "Plantilla comprobante — Cómo crear", texto: "¡Hola! Para crear una plantilla de comprobante contable en Flexline, sigue estos pasos:
+1. Ve al Mantenedor de Comprobantes y tabula hasta el final como si fueras a crear uno nuevo
+2. Ve a Administración → Consulta de Comprobantes
+3. Elige el tipo de comprobante que usarás como plantilla
+4. En Opciones → Guardar como Plantilla → Grabar
+¿Quieres que te guiemos en el proceso?" },
+    { tag: "Plantilla comprobante — Cómo aplicar", texto: "¡Hola! Para aplicar una plantilla de comprobante ya creada:
+1. Ingresa al Mantenedor de Comprobantes y tabula hasta el final
+2. Ve a Administración → Consulta de Comprobantes
+3. En Opciones → Aplicar Plantilla → Consulta de Plantillas
+4. Selecciona la plantilla guardada y Graba
+Recuerda que al quedar en estado Cuadrado debes actualizar con el Actualizador Masivo. ¿Tienes la plantilla ya creada?" },
     { tag: "Plantilla comprobante — Guardar desde existente", texto: "¡Hola! También puedes guardar como plantilla cualquier comprobante existente. Solo entra al comprobante en modo mantención, ingresa el encabezado y selecciona la opción Guardar como Plantilla. No realiza validaciones al grabar. ¿Tienes el comprobante que quieres usar como base?" },
   ]},
   { modulo: "🏦 Tesorería", items: [
@@ -615,9 +683,32 @@ function ValidadorXMLSection({xmlInput,setXmlInput,xmlResultado,setXmlResultado,
   const [subTab, setSubTab] = useState("validar");
   const [modoXML, setModoXML] = useState("dte"); // "dte" o "envio"
 
-  const EJ33=`<?xml version="1.0" encoding="ISO-8859-1"?>\n<DTE version="1.0">\n  <Documento ID="F33T123">\n    <Encabezado>\n      <IdDoc><TipoDTE>33</TipoDTE><Folio>123</Folio><FchEmis>2025-06-24</FchEmis><FmaPago>1</FmaPago></IdDoc>\n      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>\n      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>\n      <Totales><MntNeto>100000</MntNeto><TasaIVA>19</TasaIVA><IVA>19000</IVA><MntTotal>119000</MntTotal></Totales>\n    </Encabezado>\n    <Detalle><NroLinDet>1</NroLinDet><NmbItem>SERVICIO EJEMPLO</NmbItem><QtyItem>1</QtyItem><PrcItem>100000</PrcItem><MontoItem>100000</MontoItem></Detalle>\n  </Documento>\n</DTE>`;
+  const EJ33=`<?xml version="1.0" encoding="ISO-8859-1"?>
+<DTE version="1.0">
+  <Documento ID="F33T123">
+    <Encabezado>
+      <IdDoc><TipoDTE>33</TipoDTE><Folio>123</Folio><FchEmis>2025-06-24</FchEmis><FmaPago>1</FmaPago></IdDoc>
+      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>
+      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>
+      <Totales><MntNeto>100000</MntNeto><TasaIVA>19</TasaIVA><IVA>19000</IVA><MntTotal>119000</MntTotal></Totales>
+    </Encabezado>
+    <Detalle><NroLinDet>1</NroLinDet><NmbItem>SERVICIO EJEMPLO</NmbItem><QtyItem>1</QtyItem><PrcItem>100000</PrcItem><MontoItem>100000</MontoItem></Detalle>
+  </Documento>
+</DTE>`;
 
-  const EJ61=`<?xml version="1.0" encoding="ISO-8859-1"?>\n<DTE version="1.0">\n  <Documento ID="F61T45">\n    <Encabezado>\n      <IdDoc><TipoDTE>61</TipoDTE><Folio>45</Folio><FchEmis>2025-06-24</FchEmis></IdDoc>\n      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>\n      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>\n      <Totales><MntNeto>50000</MntNeto><TasaIVA>19</TasaIVA><IVA>9500</IVA><MntTotal>59500</MntTotal></Totales>\n    </Encabezado>\n    <Referencia><NroLinRef>1</NroLinRef><TpoDocRef>33</TpoDocRef><FolioRef>100</FolioRef><FchRef>2025-06-20</FchRef><CodRef>1</CodRef><RazonRef>ANULACION</RazonRef></Referencia>\n    <Detalle><NroLinDet>1</NroLinDet><NmbItem>DEVOLUCION</NmbItem><QtyItem>1</QtyItem><PrcItem>50000</PrcItem><MontoItem>50000</MontoItem></Detalle>\n  </Documento>\n</DTE>`;
+  const EJ61=`<?xml version="1.0" encoding="ISO-8859-1"?>
+<DTE version="1.0">
+  <Documento ID="F61T45">
+    <Encabezado>
+      <IdDoc><TipoDTE>61</TipoDTE><Folio>45</Folio><FchEmis>2025-06-24</FchEmis></IdDoc>
+      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>
+      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>
+      <Totales><MntNeto>50000</MntNeto><TasaIVA>19</TasaIVA><IVA>9500</IVA><MntTotal>59500</MntTotal></Totales>
+    </Encabezado>
+    <Referencia><NroLinRef>1</NroLinRef><TpoDocRef>33</TpoDocRef><FolioRef>100</FolioRef><FchRef>2025-06-20</FchRef><CodRef>1</CodRef><RazonRef>ANULACION</RazonRef></Referencia>
+    <Detalle><NroLinDet>1</NroLinDet><NmbItem>DEVOLUCION</NmbItem><QtyItem>1</QtyItem><PrcItem>50000</PrcItem><MontoItem>50000</MontoItem></Detalle>
+  </Documento>
+</DTE>`;
 
   function runValidar(){
     if(!xmlInput.trim())return;
@@ -859,7 +950,7 @@ export default function FlexlineAsistente() {
     "Para consultar Órdenes de Compra (OC) pendientes y cerradas en Flexline: usar el Panel Diagrama de Sistemas. Acceso desde el menú principal → botón 'Diagrama y Listado' (icono de tabla en barra superior). Luego seleccionar Sistema: Compras → clic en documento ORDEN DE COMPRA. Filtrar por Vigencia: S=pendientes, N=cerradas. Permite personalizar columnas, agrupar por criterios y exportar el listado.",
     "Para crear un nuevo usuario facturador en Factura Electrónica: Factura Electrónica → Mantenedor de Parámetros de FE → seleccionar un usuario facturador del listado → Importar configuración desde BD → Importar configuración → Guardar.",
     "Error de schema en cesión de documentos: se debe agregar el e-mail del Cesionario o Cedente en el Mantenedor de Cuentas Corrientes del módulo Comercial. Luego volver a realizar la cesión del documento.",
-    "Para localizar documentos generados con ACEPTA en el servidor: C:\\Acepta\\DTEService\\custodium.com\\dte\\var\\ca4xml\\output\\dump — buscar por carpeta del día y subcarpeta según la hora de generación. El archivo se identifica por el número del documento. Si no está en esa hora, revisar la carpeta anterior o siguiente.",
+    "Para localizar documentos generados con ACEPTA en el servidor: C:\Acepta\DTEService\custodium.com\dte\var\ca4xml\output\dump — buscar por carpeta del día y subcarpeta según la hora de generación. El archivo se identifica por el número del documento. Si no está en esa hora, revisar la carpeta anterior o siguiente.",
     "Para crear una plantilla de comprobante contable en Flexline: 1) Ingresar al Mantenedor de Comprobantes, tabular hasta el final como si se fuera a crear un comprobante, ir a Administración → Consulta de Comprobantes. 2) Elegir el tipo de comprobante que se usará como plantilla. 3) En Opciones → Guardar como Plantilla (Grabar). Para aplicar la plantilla: repetir el paso 1, luego ir a Opciones → Aplicar Plantilla → Consulta de Plantillas → seleccionar la plantilla guardada → Grabar. Nota: al quedar en estado Cuadrado, actualizar con el Actualizador Masivo.",
   ]);
   const [guardado, setGuardado] = useState(false);
@@ -884,7 +975,8 @@ export default function FlexlineAsistente() {
     return `Eres un agente de soporte experto del sistema ERP Flexline que atiende por chat.
 
 ⚠️ ATENCIÓN — NOMENCLATURA OBLIGATORIA: Usa SIEMPRE estos nombres exactos de menús y rutas de Flexline:
-${conocimiento.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+${conocimiento.map((c, i) => `${i + 1}. ${c}`).join("
+")}
 
 Tu tarea es redactar una respuesta ${esRegeneracion ? "ALTERNATIVA, más concreta y directa" : "inteligente, empática y técnica"} para: ${situMap[situacion]}.
 
@@ -1247,7 +1339,8 @@ Tu tarea es mejorarla respetando estas reglas:
                   readOnly
                   value={respuesta}
                   style={{ width: "100%", fontSize: 14, lineHeight: 1.8, color: "#1a1a2e", whiteSpace: "pre-wrap", background: "#fff", borderRadius: 8, padding: "12px 14px", border: "1px solid #e0e7ff", resize: "none", fontFamily: "inherit", boxSizing: "border-box", cursor: "text", minHeight: 120 }}
-                  rows={Math.max(4, respuesta.split("\n").length + 1)}
+                  rows={Math.max(4, respuesta.split("
+").length + 1)}
                 />
                 <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
                   <button onClick={() => doCopy(respuesta, () => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}
@@ -1363,9 +1456,9 @@ Tu tarea es mejorarla respetando estas reglas:
                 titulo: "📁 Rutas CAF y Certificado — Acepta Local",
                 color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
                 items: [
-                  { label: "📂 Ruta CAF (folios)", contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\caf", nota: "Los folios se bajan en formato XML desde el SII y se deben transformar a formato PEM desde ACEPTA antes de copiarlos." },
+                  { label: "📂 Ruta CAF (folios)", contenido: "C:\Acepta\DTEService\custodium.com\dte\etc\cert\caf", nota: "Los folios se bajan en formato XML desde el SII y se deben transformar a formato PEM desde ACEPTA antes de copiarlos." },
                   { label: "🔗 Link conversión CAF a PEM", contenido: "https://acg4.acepta.com/acvt2/servlet/gencafcert", nota: "Enlace oficial para convertir archivos CAF de formato XML a PEM.", esLink: true },
-                  { label: "📂 Ruta Firma Digital (certificado)", contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\pki", nota: "Aquí se sube la firma digital del representante legal." },
+                  { label: "📂 Ruta Firma Digital (certificado)", contenido: "C:\Acepta\DTEService\custodium.com\dte\etc\cert\pki", nota: "Aquí se sube la firma digital del representante legal." },
                 ]
               },
               {
@@ -1387,7 +1480,10 @@ Tu tarea es mejorarla respetando estas reglas:
                 color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc",
                 items: [
                   { label: "🛠️ Aplicación P12toPEM", contenido: "Herramienta: p12topem.exe (incluye OpenSSL para Windows). Archivos requeridos: libeay32.dll, libssl32.dll, openssl.exe, p12topem.exe, ssleay32.dll", nota: "Todos los archivos deben estar en la misma carpeta para que funcione correctamente." },
-                  { label: "📋 Pasos para convertir certificado", contenido: "1. Ejecutar p12topem.exe\n2. Seleccionar el archivo .p12 o .pfx del certificado\n3. Ingresar la contraseña del certificado\n4. El archivo .pem generado se copia a la ruta: C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\pki", nota: "El archivo .pem es la firma digital del representante legal requerida por ACEPTA." },
+                  { label: "📋 Pasos para convertir certificado", contenido: "1. Ejecutar p12topem.exe
+2. Seleccionar el archivo .p12 o .pfx del certificado
+3. Ingresar la contraseña del certificado
+4. El archivo .pem generado se copia a la ruta: C:\Acepta\DTEService\custodium.com\dte\etc\cert\pki", nota: "El archivo .pem es la firma digital del representante legal requerida por ACEPTA." },
                   { label: "🔗 Link alternativo conversión CAF a PEM (ACEPTA online)", contenido: "https://acg4.acepta.com/acvt2/servlet/gencafcert", nota: "Para conversión de folios CAF desde XML a PEM — distinto al certificado del representante legal.", esLink: true },
                 ]
               },
@@ -1397,12 +1493,16 @@ Tu tarea es mejorarla respetando estas reglas:
                 items: [
                   {
                     label: "📂 Ruta base documentos ACEPTA",
-                    contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\var\\ca4xml\\output\\dump",
+                    contenido: "C:\Acepta\DTEService\custodium.com\dte\var\ca4xml\output\dump",
                     nota: "En esta carpeta se generan los documentos del día. Cada subcarpeta corresponde a la hora en que se generó el documento. Si no está en la carpeta de esa hora, puede estar en la anterior o siguiente según día y hora."
                   },
                   {
                     label: "🔍 Cómo localizar un documento",
-                    contenido: "1. Ingresar a la ruta base del servidor\n2. Abrir la carpeta del día actual (documentos generados hoy)\n3. Seleccionar la subcarpeta según la hora de generación del documento\n4. Identificar el archivo por el número del documento\n5. Si no está, revisar la carpeta anterior o siguiente",
+                    contenido: "1. Ingresar a la ruta base del servidor
+2. Abrir la carpeta del día actual (documentos generados hoy)
+3. Seleccionar la subcarpeta según la hora de generación del documento
+4. Identificar el archivo por el número del documento
+5. Si no está, revisar la carpeta anterior o siguiente",
                     nota: "Todos los clientes ACEPTA operan de la misma manera con esta estructura de carpetas."
                   },
                 ]
@@ -1484,7 +1584,8 @@ Tu tarea es mejorarla respetando estas reglas:
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const domContainer = document.getElementById('root');
+const root = ReactDOM.createRoot(domContainer);
 root.render(React.createElement(FlexlineAsistente));
   </script>
 </body>
