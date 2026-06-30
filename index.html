@@ -1,0 +1,1491 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Asistente Flexline</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f7; }
+    #root { height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react">
+import { useState } from "react";
+
+const SITUACIONES = [
+  { val: "consulta", label: "Consulta general" },
+  { val: "error", label: "Error / fallo" },
+  { val: "factura", label: "Factura / cobro" },
+  { val: "usuario", label: "Acceso / usuario" },
+  { val: "reporte", label: "Reporte / datos" },
+  { val: "lento", label: "Sistema lento" },
+  { val: "espera", label: "En revisión / espera" },
+  { val: "servidor", label: "Servidor local / TI" },
+  { val: "otro", label: "Otro" },
+];
+
+const MODULOS = [
+  "", "Factura Electrónica", "Comunes", "Contabilidad", "Ventas",
+  "Inventario", "Remuneraciones", "Compras", "Tesorería",
+  "Activo Fijo", "Presupuesto", "Administrador del sistema", "Plataforma"
+];
+
+const DESPEDIDAS = [
+  { label: "😊 Excelente día", texto: "Fue un gusto ayudarte. Que tengas un buen día. 😊" },
+  { label: "👋 Próximo chat", texto: "Gracias por contactarte. Quedamos atentos ante cualquier consulta. 👋" },
+  { label: "✅ Problema resuelto", texto: "Me alegra que haya quedado resuelto. Para cualquier nueva consulta, te esperamos en un nuevo chat. 😊" },
+  { label: "🙌 Seguimiento pendiente", texto: "Gracias por tu paciencia. En cuanto tenga novedades te aviso. Que tengas un buen día. 🙌" },
+  { label: "🛠️ Escalado a soporte", texto: "Gracias por avisarme. El equipo técnico tomará el caso y se contactará contigo a la brevedad. Que tengas un buen día. 🛠️" },
+  { label: "🌟 Fin de jornada", texto: "Gracias por contactarte. Ya terminamos por hoy, pero mañana estamos disponibles para ayudarte. Hasta pronto. 🌟" },
+  { label: "🎉 Buen fin de semana", texto: "Fue un gusto ayudarte. Te deseo un buen descanso este fin de semana. El lunes estamos disponibles para lo que necesites. 😊" },
+  { label: "⏳ Sin respuesta — cierre", texto: "Me contacto nuevamente ya que no hemos tenido confirmación de tu parte respecto a lo solicitado. Ante esto, damos por finalizado este chat, pero quedamos atentos en caso de que requieras retomar el caso. 😊" },
+  { label: "💤 Cliente no continuó", texto: "Notamos que no hubo más respuesta de tu parte luego de nuestra atención. Damos por cerrado este chat por el momento, pero si necesitas retomar el tema, con gusto te atendemos en un nuevo chat. 😊" },
+  { label: "🎯 Campaña Julio — Levantamiento", texto: "Antes de cerrar, te comento que durante Julio estamos ofreciendo un levantamiento de procesos en Flexline, donde revisamos junto a ti cómo está configurado tu sistema e identificamos mejoras. Si te interesa, con gusto coordinamos una sesión. ¿Te parece?" },
+  { label: "🎯 Campaña Julio — Oferta general", texto: "Por cierto, durante Julio contamos con una campaña especial de levantamiento de procesos en Flexline, donde evaluamos junto a ti el estado actual de tu sistema e identificamos oportunidades de mejora. Si te interesa, podemos coordinar una revisión sin compromiso. 😊" },
+  { label: "🎯 Campaña Julio — Cierre suave", texto: "Antes de finalizar, te cuento que en Julio estamos ofreciendo sesiones de levantamiento de procesos en Flexline. Si crees que puede ser de utilidad para tu empresa, con gusto te enviamos más información. 😊" },
+];
+
+const CONTENCIONES = [
+  { label: "⏳ Alta demanda", texto: "Estamos atendiendo una alta demanda en este momento. Te pedimos un poco de paciencia, te atenderemos a la brevedad. ¡Gracias por esperarnos! 😊" },
+  { label: "🔍 Revisando tu caso", texto: "Ya estoy revisando tu caso. En cuanto tenga una respuesta te aviso de inmediato. ¡Gracias por tu paciencia! 🔍" },
+  { label: "📞 Te contactamos pronto", texto: "Tomé nota de tu caso y me pondré en contacto contigo a la brevedad posible. ¡Estoy atento/a y te ayudo! 📞" },
+  { label: "🗄️ Contacto pronto — modificación BD", texto: "Tomé nota de tu caso y me pondré en contacto contigo a la brevedad posible. Debo hacer la modificación en esta oportunidad desde la base de datos. ¡Gracias por tu paciencia! 😊" },
+  { label: "🛠️ En mantención", texto: "En este momento estamos realizando tareas de mantención programada. Te pedimos disculpas por los inconvenientes y te informaremos cuando todo esté operativo. 🛠️" },
+  { label: "⚠️ Problema identificado", texto: "Ya identificamos el problema y nuestro equipo está trabajando para resolverlo. Te avisamos en cuanto esté solucionado. ¡Gracias por avisarnos! ⚠️" },
+  { label: "🙏 Gracias por la paciencia", texto: "Agradecemos mucho tu paciencia. Sabemos que es importante para ti y estamos haciendo todo lo posible para darte una solución a la brevedad. 🙏" },
+  { label: "🙇 Disculpa por la demora", texto: "Disculpa la demora en responderte. A la brevedad posible te estaré enviando una respuesta. ¡Muchas gracias por tu paciencia! 🙇" },
+  { label: "🔎 Revisando en sistema/BD", texto: "Dame un momento, por favor. Voy a revisar directamente en el sistema y realizar los ajustes que correspondan para darte una respuesta precisa. ¡Gracias por tu paciencia mientras lo verifico! 🔎" },
+  { label: "🕐 En espera de tu validación", texto: "Según lo revisado de nuestra parte, el tema queda en tus manos para que puedas validarlo y confirmar los resultados. Quedamos atentos a tu respuesta antes de poder dar por cerrado este caso. ¡Cualquier novedad, aquí estamos! 😊" },
+  { label: "💬 Tema diferente — nuevo chat", texto: "Notamos que la consulta que nos indicas ahora corresponde a un tema distinto al que estamos tratando en este chat. Para poder atenderte de la mejor manera, te pedimos que por favor abras un nuevo chat con esta consulta y con gusto te ayudamos. ¡Gracias por entender! 😊" },
+  { label: "🔔 Recordatorio — confirma pendiente", texto: "Hola, quiero recordarte que estoy a la espera de tu confirmación para poder continuar y revisar tu caso. En cuanto me indiques, seguimos de inmediato. ¡Cualquier consulta, aquí estoy! 😊" },
+  { label: "🕓 Cierre viernes 16:00 hrs", texto: "Te recuerdo que hoy viernes nuestro horario de atención es hasta las 16:00 hrs. Si no alcanzamos a resolver tu caso hoy, con gusto continuamos el próximo lunes. ¡Gracias por tu comprensión! 😊" },
+  { label: "🗄️ Solicitud de BD", texto: "Revisando tu caso me doy cuenta que para poder analizarlo en detalle vamos a necesitar un respaldo de tu base de datos. En un momento te envío las credenciales y el link para que puedas enviárnosla. ¡Gracias por tu paciencia! 😊" },
+  { label: "🖥️ Conexión remota AnyDesk", texto: "Para poder revisar tu inconveniente directamente, podemos conectarnos a tu equipo mediante AnyDesk. Puedes descargarlo desde https://anydesk.com/es/downloads y compartirme el código de conexión que aparece al abrirlo. ¡Gracias! 😊" },
+  { label: "🔐 Autorización copia BD (cloud)", texto: "Revisando tu caso necesitamos acceder a un respaldo de tu base de datos para poder analizarlo en detalle. Dado que tu ambiente se encuentra en nuestros servidores, requerimos tu autorización para solicitar la copia a nuestro equipo de Plataforma. ¿Nos autorizas a realizar esta gestión? ¡Gracias! 😊" },
+];
+
+const PLATAFORMA = [
+  { label: "🖥️ Plataforma revisando", texto: "Nuestro equipo de Plataforma se encuentra revisando el inconveniente. En cuanto tengamos novedades te avisamos de inmediato. ¡Gracias por tu paciencia! 🖥️" },
+  { label: "🔐 Acceso / clave", texto: "El inconveniente con tu acceso o contraseña está siendo revisado por nuestro equipo de Plataforma. Te avisaremos a la brevedad con una solución. ¡Gracias por avisarnos! 🔐" },
+  { label: "☁️ Ambiente cloud", texto: "Nuestro equipo de Plataforma está evaluando el inconveniente en el ambiente cloud y trabajando para corregirlo a la brevedad. Te mantendremos informado. ☁️" },
+  { label: "⚙️ Plataforma evaluando", texto: "Nuestro equipo de Plataforma ya está evaluando el problema para corregirlo a la brevedad. Agradecemos tu paciencia mientras trabajamos en ello. ⚙️" },
+  { label: "🔄 En proceso de corrección", texto: "El equipo de Plataforma identificó el inconveniente y está en proceso de corrección. En cuanto esté resuelto te notificamos. ¡Gracias por tu comprensión! 🔄" },
+  { label: "✅ Plataforma resuelto", texto: "Nuestro equipo de Plataforma ya corrigió el inconveniente. Por favor intenta nuevamente y avísanos si persiste algún problema. ¡Gracias por tu paciencia! ✅" },
+  { label: "🔑 Clave RD — solicitar usuario", texto: "Entiendo que tu contraseña de acceso al escritorio remoto ha vencido. Para gestionar la nueva clave con nuestro equipo de Plataforma, necesito que me indiques tu usuario de escritorio remoto. En cuanto me lo proporciones, realizamos la solicitud de inmediato. 😊" },
+  { label: "🔑 Clave RD — gestionando con plataforma", texto: "Ya tomé nota de tu usuario y estoy gestionando la nueva contraseña con Plataforma. En cuanto la tenga te la envío. 😊" },
+  { label: "🔑 Clave RD — enviando contraseña", texto: "Ya tengo tu nueva contraseña de acceso al escritorio remoto. Te la comparto a continuación. Por favor intenta ingresar y avísame si todo quedó en orden. 🔑" },
+];
+
+const DERIVACIONES = [
+  { grupo: "🔧 Consultoría Técnica", color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd", items: [
+    { label: "🔧 Derivado a C. Técnica", texto: "Te comento que tu caso fue derivado al área de Consultoría Técnica, quienes se pondrán en contacto contigo a la brevedad para revisar y gestionar tu solicitud. ¡Gracias por tu paciencia! 🔧" },
+    { label: "🔧 C. Técnica — en revisión", texto: "Tu caso ya está en manos del equipo de Consultoría Técnica. En cuanto tengan novedades te contactarán directamente. Cualquier cosa adicional, aquí estamos. 😊" },
+    { label: "🔧 C. Técnica — agendando", texto: "El área de Consultoría Técnica revisó tu caso y se contactará contigo para coordinar la atención. ¡Quédate tranquilo/a que están al tanto! 🔧" },
+  ]},
+  { grupo: "📚 Consultoría Funcional", color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc", items: [
+    { label: "📚 Derivado a C. Funcional", texto: "Te informamos que tu caso fue derivado al área de Consultoría Funcional, quienes se comunicarán contigo para orientarte y apoyarte en lo que necesitas. ¡Gracias por contactarnos! 📚" },
+    { label: "📚 C. Funcional — en revisión", texto: "Tu solicitud ya está siendo atendida por el equipo de Consultoría Funcional. Te contactarán a la brevedad para coordinar la capacitación o configuración requerida. 😊" },
+    { label: "📚 C. Funcional — agendando", texto: "El equipo de Consultoría Funcional revisó tu caso y coordinará contigo una sesión para atender tu solicitud. ¡Estaremos atentos! 📚" },
+  ]},
+  { grupo: "💻 Desarrollo", color: "#059669", bg: "#f0fdf4", border: "#6ee7b7", items: [
+    { label: "💻 Derivado a Desarrollo", texto: "Tu caso fue derivado al área de Desarrollo para su análisis y corrección. Este equipo evaluará el requerimiento y te mantendremos informado sobre los avances. ¡Gracias por tu paciencia! 💻" },
+    { label: "💻 Desarrollo — en análisis", texto: "El equipo de Desarrollo ya está analizando tu caso. En cuanto tengamos una estimación de resolución te avisamos. ¡Gracias por avisarnos y aguardar! 😊" },
+    { label: "💻 Desarrollo — corrección en curso", texto: "El área de Desarrollo identificó el problema y está trabajando en la corrección. Te notificaremos en cuanto esté resuelto. ¡Gracias por tu comprensión! 💻" },
+  ]},
+];
+
+const DERIVACIONES_INTERNAS = [
+  {
+    grupo: "📊 Contabilidad / Análisis de Cuentas",
+    color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
+    items: [
+      { label: "⚠️ Saldo incorrecto post-cierre", texto: "Solicito tu apoyo para analizar el siguiente caso.\n\nEl cliente presenta saldo cero en la cuenta [CUENTA] al cierre del ejercicio anual [AÑO], sin embargo en el período [AÑO+1] aparece un saldo que no debería existir. Adjunto análisis de cuenta ficha de ambos períodos para tu revisión.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "⚠️ Diferencia en cierre anual", texto: "Solicito tu apoyo para revisar diferencia detectada en el cierre anual [AÑO].\n\nSe presenta inconsistencia en la cuenta [CUENTA] de la empresa [EMPRESA]. El saldo no cuadra con lo esperado al finalizar el período.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+    ]
+  },
+  {
+    grupo: "🗄️ Base de Datos / Correcciones",
+    color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc",
+    items: [
+      { label: "🔧 Corrección en BD requerida", texto: "Solicito tu apoyo para realizar una corrección directamente en base de datos.\n\nEl cliente presenta el siguiente inconveniente: [DESCRIPCIÓN DEL PROBLEMA]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "🔧 Registro duplicado en BD", texto: "Solicito tu apoyo para revisar y eliminar registro duplicado detectado en base de datos.\n\nTabla afectada: [TABLA]\nCriterio de duplicado: [DESCRIPCIÓN]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+    ]
+  },
+  {
+    grupo: "📄 Factura Electrónica / DTE",
+    color: "#059669", bg: "#f0fdf4", border: "#6ee7b7",
+    items: [
+      { label: "⚠️ Error emisión DTE", texto: "Solicito tu apoyo para revisar error en emisión de DTE.\n\nEl cliente no puede emitir documentos. Error reportado: [ERROR]\nTipo de documento: [TIPO DTE]\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+      { label: "⚠️ Documento no llegó al SII", texto: "Solicito tu apoyo para revisar documento que no llegó al SII.\n\nFolio: [FOLIO] — Tipo: [TIPO DTE] — Fecha: [FECHA]\nEl documento existe en Flexline pero no aparece en el SII.\n\nDatos de acceso:\n— Empresa: [EMPRESA]\n— Usuario: [USUARIO]\n— Clave: [CLAVE]\n— BD: [BD]" },
+    ]
+  },
+];
+
+
+const MODULOS_PLANTILLAS = [
+  { modulo: "📄 Factura Electrónica", items: [
+    { tag: "Tag FMAPAGOS — Cómo configurar", texto: "¡Hola! Para configurar el tag de Forma de Pago en Flexline, primero debes crear el código FMAPAGOS en el Mantenedor de Códigos Genéricos del módulo Comunes. Luego agrégalo en Mantenedor de Parámetros (pestaña Comercial) y finalmente en FE → Mantenedor de Parámetros → Configuraciones Globales. ¿Quieres que te guiemos paso a paso?" },
+    { tag: "Tag FMAPAGOS — Configuración exitosa", texto: "¡Listo! El tag FMAPAGOS quedó configurado correctamente. Ahora al facturar verás el análisis disponible y el XML incluirá el tag FmaPago. 🎉" },
+    { tag: "Tag FMAPAGOS — No aparece al facturar", texto: "¡Hola! Si el tag no aparece al facturar, verifica que hayas grabado en cada paso: Mantenedor de Códigos Genéricos, Mantenedor de Parámetros de Comunes y Configuraciones Globales de FE. ¿Revisaste todos esos pasos?" },
+    { tag: "Código de Traslado — Cómo configurar", texto: "¡Hola! Para configurar el código de traslado en Guías de Despacho, debes agregar los tags en FE → Mantenedor de Parámetros. Recuerda que el tipo de dato debe ser String y no Numérico. ¿Tienes abierto el mantenedor de parámetros?" },
+    { tag: "Código de Traslado — Tipo 8 o 9", texto: "¡Hola! Al emitir con código de traslado tipo 8 o 9, Flexline te pedirá ingresar el código de traslado obligatoriamente antes de emitir. ¿Puedes confirmarnos qué tipo de traslado estás usando?" },
+    { tag: "Código de Traslado — Tipo 4", texto: "¡Hola! Al usar código de traslado tipo 4, además del código deberás ingresar folio y fecha para poder emitir y generar el XML con los tags. ¿Tienes esos datos a mano?" },
+    { tag: "PDF no se genera / No llegó al SII", texto: "¡Hola! Para resolver esto, el usuario que emitió el documento debe ingresar a Flexline e ir a Factura Electrónica → Generación de Documento en XML. El sistema listará los documentos pendientes y los procesará automáticamente. ¿Puedes intentarlo?" },
+    { tag: "PDF no se genera — Escalar a soporte", texto: "¡Hola! Si el problema persiste luego de intentar la regeneración del XML, necesitamos revisar el servidor de base de datos. Vamos a escalar esto al equipo técnico, te avisamos apenas tengamos novedades." },
+    { tag: "Desemitir documento — Cómo hacerlo", texto: "¡Hola! Para desemitir el documento ve a Factura Electrónica → Administración de Factura Electrónica, pestaña 'Desemitir Documentos'. Busca el documento, márcalo y haz clic en Procesar. ¿Quieres que te guiemos?" },
+    { tag: "Desemitir documento — No aparece la opción", texto: "¡Hola! Si no ves la pestaña 'Desemitir Documentos', es probable que no tengas el permiso habilitado. Hay que activar el programa FLDTEADMIN en Seguridad Flexline → Flexsegm. ¿Tienes acceso a la configuración de seguridad?" },
+    { tag: "Desemitir documento — Resultado exitoso", texto: "¡Listo! El documento fue desemitido correctamente y ya está disponible nuevamente en Ingreso de Documentos para reenviarlo al SII. Lo podrás identificar porque comienza con correlativo X000. 🎉" },
+    { tag: "Boleta / Factura Venta — Folio duplicado", texto: "¡Hola! El folio que intentas inyectar ya está registrado en el sistema. ¿Puedes confirmar si es un reenvío o un folio nuevo? Con eso lo solucionamos rápido. 😊" },
+    { tag: "Boleta / Factura Venta — RUT inválido", texto: "¡Hola! El RUT del emisor no está pasando la validación. ¿Puedes confirmarnos el RUT completo con dígito verificador? Con eso lo corregimos de inmediato." },
+    { tag: "Boleta / Factura Venta — Integración exitosa", texto: "¡Listo! Tu factura de venta quedó integrada correctamente en Flexline. Ya puedes verla en el módulo correspondiente. 🎉" },
+    { tag: "Nota Crédito / Débito — Factura origen no integrada", texto: "¡Hola! La nota de crédito hace referencia a una factura que aún no está integrada en Flexline. Necesitamos integrar primero esa factura. ¿Nos la puedes enviar?" },
+    { tag: "Nota Crédito / Débito — Período cerrado", texto: "¡Hola! El período contable está cerrado. ¿Lo registramos en el período actual o necesitas que revisemos la apertura del período?" },
+    { tag: "Nota Crédito / Débito — Integración exitosa", texto: "¡Todo listo! La nota de crédito quedó integrada y ya está aplicada sobre la factura original en Flexline. 🎉" },
+    { tag: "Folios — Cómo anular", texto: "¡Hola! Para anular folios en Flexline, debes ir a Factura Electrónica → Administración de Factura Electrónica (Administrador de DTEs) → pestaña Anular. Ahí podrás seleccionar y anular los folios que necesites. ¿Quieres que te guiemos en el proceso?" },
+    { tag: "Campos 801-HES — Campo VALIDA en N", texto: "¡Hola! Al configurar los campos HES en el Mantenedor de Parámetros, el campo VALIDA debe quedar en 'N', ya que estos campos no validan tablas. ¿Ya revisaste esa configuración?" },
+    { tag: "Campos 801-HES — Marcar en encabezado", texto: "¡Hola! Una vez configurados los campos en el Mantenedor de Parámetros, debes ir a la definición del documento y marcar en el encabezado todos los campos agregados. Luego en Mantenedor de Parámetros de FE, en el campo Análisis Tag de Referencia, marca el documento con los campos respectivos. ¿Quieres que te guiemos?" },
+    { tag: "Campos 801-HES — Configuración exitosa", texto: "¡Listo! Los campos 801-HES quedaron configurados correctamente en el Mantenedor de Parámetros de FE. Ya deberían aparecer disponibles en el documento al momento de facturar. 🎉" },
+    { tag: "Usuario facturador — Cómo agregar", texto: "¡Hola! Para agregar un nuevo usuario facturador en Flexline, ve a Factura Electrónica → Mantenedor de Parámetros de FE, selecciona el usuario del listado, luego haz clic en 'Importar configuración desde BD' → 'Importar configuración' y finalmente guarda el cambio. ¿Tienes el usuario creado en el sistema?" },
+  ]},
+  { modulo: "🛒 Compras", items: [
+    { tag: "Factura Compra — Proveedor no existe", texto: "¡Hola! El RUT del proveedor no está registrado en Flexline. ¿Quieres que lo creemos antes de integrar la factura? Solo necesitamos los datos del proveedor." },
+    { tag: "Factura Compra — OC cerrada o inexistente", texto: "¡Hola! La orden de compra asociada ya está cerrada o no existe en el sistema. ¿Puedes verificar el número de OC? Lo revisamos contigo." },
+    { tag: "Factura Compra — Diferencia de montos", texto: "¡Hola! Hay una diferencia entre el monto de la factura y la orden de compra. ¿Nos confirmas si esa diferencia es correcta para proceder con la integración?" },
+    { tag: "Factura Compra — Integración exitosa", texto: "¡Listo! La factura de compra quedó integrada correctamente en Flexline. Ya puedes verla en el módulo de Compras. 🎉" },
+    { tag: "Orden de Compra — Artículo no existe", texto: "¡Hola! El código de producto no está registrado en Flexline. ¿Lo creamos antes de integrar la OC o tienes el código correcto?" },
+    { tag: "Orden de Compra — Precio unitario inválido", texto: "¡Hola! Hay un problema con el precio unitario. ¿Puedes confirmarnos si el separador decimal que usas es punto o coma? Así lo ajustamos." },
+    { tag: "Orden de Compra — Integración exitosa", texto: "¡Listo! La orden de compra quedó integrada correctamente en Flexline. Ya puedes revisarla en el módulo de Compras. 🎉" },
+    { tag: "OC — Consultar pendientes y cerradas", texto: "¡Hola! Para consultar tus Órdenes de Compra pendientes y cerradas en Flexline, puedes usar el Panel Diagrama de Sistemas. Desde el menú principal haz clic en el botón 'Diagrama y Listado' (ícono de tabla en la barra superior), selecciona Sistema: Compras y luego haz clic sobre el documento ORDEN DE COMPRA. El listado se cargará automáticamente. ¿Quieres que te guiemos?" },
+    { tag: "OC — Filtrar por estado (pendiente/cerrada)", texto: "¡Hola! En el Panel Diagrama de Sistemas puedes filtrar tus OC por estado usando el campo Vigencia: S = pendientes y N = cerradas. También puedes personalizar las columnas y exportar el listado para análisis externo. ¿Hay algún período específico que quieras revisar?" },
+    { tag: "OC — Personalizar columnas del listado", texto: "¡Hola! En el Panel Diagrama de Sistemas puedes usar 'Selección de Columnas' para elegir qué campos mostrar, como Código Legal, Comprador, Correlativo, Condición de Pago, entre otros. También puedes arrastrar campos al área superior para agrupar el listado por ese criterio. ¿Necesitas ayuda con alguna columna específica?" },
+  ]},
+  { modulo: "🔧 Comunes", items: [
+    { tag: "Mantenedor de Códigos Genéricos", texto: "¡Hola! Para agregar un código en el Mantenedor de Códigos Genéricos, ve al módulo Comunes y busca esa opción en el menú. ¿En qué código específico necesitas ayuda?" },
+    { tag: "Parámetro no graba", texto: "¡Hola! Si el parámetro no está grabando, asegúrate de hacer clic en Grabar después de cada cambio. Algunos requieren cerrar sesión para tomar efecto. ¿Probaste cerrando sesión?" },
+    { tag: "Usuario sin acceso a módulo", texto: "¡Hola! Si un usuario no puede acceder a un módulo, hay que revisar los permisos en Seguridad Flexline → Flexsegm. ¿Tienes acceso a la configuración de seguridad?" },
+    { tag: "Período contable cerrado por error", texto: "¡Hola! Si cerraste un período por error, podemos reabrirlo desde Comunes → Administración de Períodos. ¿Quieres que te guiemos paso a paso?" },
+    { tag: "Paridades — Cómo importar desde WebService", texto: "¡Hola! Para importar paridades desde WebService en Flexline, sigue estos pasos:\n1. Ve a Comunes → Mantenedor de Paridades\n2. Selecciona Administración → Ingreso Paridades Masivas → Importar desde WebService\n3. Selecciona la Moneda de Destino, el código WebService y los períodos a importar\n4. Haz clic en Obtener desde WS → Aceptar → Importar\n5. Al finalizar puedes revisar el LOG de importación para validar los registros grabados\n\nNota: necesitas tener permisos sobre el programa MANTENPARIDAD en Seguridad de Aplicaciones. ¿Tienes ese acceso?" },
+    { tag: "Paridades — API Key SBIF", texto: "¡Hola! Para obtener el API Key necesario para importar paridades desde WebService, debes solicitarla directamente desde http://api.sbif.cl/uso-de-api-key.html y completar el formulario de obtención. ¿Ya cuentas con esa clave?" },
+    { tag: "Paridades — Importar otra moneda", texto: "¡Hola! Para importar paridades de otra moneda, debes repetir el proceso desde el Mantenedor de Paridades → Administración → Ingreso Paridades Masivas → Importar desde WebService, y en el paso de configuración seleccionar la nueva moneda a importar. ¿Quieres que te guiemos?" },
+    { tag: "Paridades — Validar información importada", texto: "¡Hola! Una vez finalizada la importación, puedes validar los valores en el mismo Mantenedor de Paridades seleccionando el período y la moneda correspondiente. El sistema mostrará todas las fechas y valores grabados. 😊" },
+  ]},
+  { modulo: "📊 Contabilidad", items: [
+    { tag: "Asiento contable — no se genera", texto: "¡Hola! Si el asiento contable no se está generando, verifica que el período contable esté abierto y que la cuenta contable esté activa en el plan de cuentas. ¿Puedes confirmarnos qué mensaje aparece al intentar generar?" },
+    { tag: "Período contable — apertura", texto: "¡Hola! Para abrir un período contable en Flexline debes ir al módulo de Contabilidad y buscar la opción de Administración de Períodos. ¿Es el período actual el que necesitas abrir?" },
+    { tag: "Plan de cuentas — cuenta inexistente", texto: "¡Hola! La cuenta contable que intentas usar no existe en el plan de cuentas de Flexline. ¿Puedes confirmarnos el código de la cuenta para verificarlo?" },
+    { tag: "Centro de costo — no válido", texto: "¡Hola! El centro de costo ingresado no está registrado en Flexline. ¿Puedes verificar el código del centro de costo? Lo revisamos contigo." },
+    { tag: "Cierre contable — proceso", texto: "¡Hola! El proceso de cierre contable afecta a todos los módulos. Antes de ejecutarlo verifica que todos los documentos del período estén ingresados y cuadrados. ¿Necesitas que te orientemos en el proceso?" },
+    { tag: "Plantilla comprobante — Cómo crear", texto: "¡Hola! Para crear una plantilla de comprobante contable en Flexline, sigue estos pasos:\n1. Ve al Mantenedor de Comprobantes y tabula hasta el final como si fueras a crear uno nuevo\n2. Ve a Administración → Consulta de Comprobantes\n3. Elige el tipo de comprobante que usarás como plantilla\n4. En Opciones → Guardar como Plantilla → Grabar\n¿Quieres que te guiemos en el proceso?" },
+    { tag: "Plantilla comprobante — Cómo aplicar", texto: "¡Hola! Para aplicar una plantilla de comprobante ya creada:\n1. Ingresa al Mantenedor de Comprobantes y tabula hasta el final\n2. Ve a Administración → Consulta de Comprobantes\n3. En Opciones → Aplicar Plantilla → Consulta de Plantillas\n4. Selecciona la plantilla guardada y Graba\nRecuerda que al quedar en estado Cuadrado debes actualizar con el Actualizador Masivo. ¿Tienes la plantilla ya creada?" },
+    { tag: "Plantilla comprobante — Guardar desde existente", texto: "¡Hola! También puedes guardar como plantilla cualquier comprobante existente. Solo entra al comprobante en modo mantención, ingresa el encabezado y selecciona la opción Guardar como Plantilla. No realiza validaciones al grabar. ¿Tienes el comprobante que quieres usar como base?" },
+  ]},
+  { modulo: "🏦 Tesorería", items: [
+    { tag: "Conciliación bancaria — diferencia", texto: "¡Hola! Si hay una diferencia en la conciliación bancaria, revisa que todos los movimientos del período estén ingresados en Flexline y que los montos coincidan con el estado de cuenta. ¿Puedes indicarnos cuál es la diferencia que aparece?" },
+    { tag: "Pago — no se registra", texto: "¡Hola! Si el pago no se está registrando, verifica que el período esté abierto y que la cuenta bancaria esté activa en Flexline. ¿Qué mensaje te aparece al intentar registrarlo?" },
+    { tag: "Cheque — anulación", texto: "¡Hola! Para anular un cheque en Flexline debes tener el número de cheque y la fecha de emisión a mano. ¿Tienes esos datos disponibles para orientarte en el proceso?" },
+    { tag: "Flujo de caja — no cuadra", texto: "¡Hola! Si el flujo de caja no está cuadrando, puede deberse a documentos pendientes de contabilizar. ¿Puedes indicarnos el período que estás revisando?" },
+  ]},
+  { modulo: "🛍️ Comercial / Ventas", items: [
+    { tag: "Lista de precios — no aplica", texto: "¡Hola! Si la lista de precios no está aplicando correctamente, verifica que esté asignada al cliente y que tenga fecha de vigencia activa en Flexline. ¿Puedes confirmarnos qué lista de precios debería aplicar?" },
+    { tag: "Cliente — no existe en sistema", texto: "¡Hola! El cliente no está registrado en Flexline. ¿Quieres que te orientemos en cómo crearlo? Solo necesitamos el RUT y los datos básicos del cliente." },
+    { tag: "Pedido — no se puede facturar", texto: "¡Hola! Si el pedido no se puede facturar, puede deberse a que está en un estado que no lo permite o que le faltan datos requeridos. ¿Puedes indicarnos el número de pedido para revisarlo?" },
+    { tag: "Descuento — no aplica", texto: "¡Hola! Si el descuento no está aplicando, verifica que esté configurado en la ficha del cliente o en la lista de precios correspondiente. ¿Qué tipo de descuento debería aplicar?" },
+    { tag: "Guía de despacho — error al emitir", texto: "¡Hola! Si la guía de despacho no se puede emitir, verifica que el código de traslado esté configurado en FE → Mantenedor de Parámetros. ¿Qué mensaje de error aparece al intentar emitirla?" },
+  ]},
+  { modulo: "🏗️ Activo Fijo", items: [
+    { tag: "Bien — no aparece en sistema", texto: "¡Hola! Si el bien no aparece en el módulo de Activo Fijo, puede que no esté registrado o que esté dado de baja. ¿Puedes indicarnos el código o nombre del bien para buscarlo?" },
+    { tag: "Depreciación — no se calcula", texto: "¡Hola! Si la depreciación no se está calculando, verifica que el bien tenga correctamente configurada la vida útil y el método de depreciación en su ficha. ¿Puedes confirmarnos qué bien presenta el problema?" },
+    { tag: "Baja de activo — proceso", texto: "¡Hola! Para dar de baja un activo fijo en Flexline necesitas tener el número de bien y la fecha de baja. ¿Tienes esa información disponible para orientarte en el proceso?" },
+    { tag: "Incorporación — error al registrar", texto: "¡Hola! Si hay un error al incorporar un bien, verifica que todos los campos obligatorios estén completos: código, descripción, fecha de adquisición y valor. ¿Qué mensaje de error aparece?" },
+  ]},
+  { modulo: "🗄️ Base de Datos / Administración", items: [
+    { tag: "BD Histórica — Qué es", texto: "¡Hola! La base de datos histórica (BDHIST) permite separar los movimientos de períodos anteriores de tu base productiva. Los usuarios pueden seguir consultando esa información con el mismo acceso a Flexline. ¿Quieres que te expliquemos el proceso?" },
+    { tag: "BD Histórica — Períodos a mantener", texto: "¡Hola! Como recomendación, sugerimos mantener en la base productiva los últimos dos años de información. Los períodos anteriores se trasladan a la base histórica. ¿Ya tienes definido hasta qué período quieres mantener en productivo?" },
+    { tag: "BD Histórica — Requisitos previos", texto: "¡Hola! Antes de ejecutar la separación de BD histórica, es necesario realizar el cierre contable y comercial del último año que quedará como histórico. Esto permite generar correctamente los documentos de apertura en la base productiva. ¿Ya tienen ese cierre realizado?" },
+    { tag: "BD Histórica — Módulos que considera", texto: "¡Hola! La separación de base de datos histórica considera los movimientos de los módulos de Comercial y Contabilidad. Si tienes dudas sobre qué información quedará en cada base, con gusto te orientamos. 😊" },
+    { tag: "BD Histórica — Tiempo del proceso", texto: "¡Hola! El proceso de separación de BD histórica requiere tiempo considerable, por lo que se recomienda cotizar sesiones en fin de semana para no afectar la operación. ¿Quieres que coordinemos eso con el equipo?" },
+    { tag: "BD Histórica — Acceso a información histórica", texto: "¡Hola! Una vez generada la base histórica, los usuarios podrán acceder y consultar esa información utilizando el mismo panel de acceso a Flexline ERP, sin necesidad de configuraciones adicionales. 😊" },
+  ]},
+  { modulo: "⚙️ General", items: [
+    { tag: "En revisión / espera", texto: "¡Hola! Disculpa la espera, tu caso ya está en manos de nuestro equipo de análisis. En cuanto tengamos novedades te avisamos de inmediato. ¡Gracias por tu paciencia! 😊" },
+    { tag: "Servidor local / TI", texto: "¡Hola! Como Flexline está en tu propio servidor, este tipo de bloqueos dependen del entorno local y la mantención es responsabilidad de tu equipo de TI. Nosotros te apoyamos en todo lo que sea del software. ¿Hay algo puntual en lo que podamos ayudarte?" },
+    { tag: "Error genérico", texto: "¡Hola! Estamos revisando el error que mencionas. En cuanto lo identifiquemos te damos una solución. ¡Gracias por avisarnos!" },
+    { tag: "Integración exitosa", texto: "¡Listo! El documento quedó integrado correctamente en Flexline. Ya puedes verlo en el módulo correspondiente. 🎉" },
+  ]},
+];
+
+const TODAS_PLANTILLAS = MODULOS_PLANTILLAS.flatMap(m => m.items);
+
+
+// ============================================================
+// CONSTANTES VALIDADOR XML
+// ============================================================
+const TIPOS_DTE_V = {33:"Factura Electrónica",34:"Factura No Afecta",39:"Boleta Electrónica",41:"Boleta No Afecta",46:"Factura de Compra",52:"Guía de Despacho",56:"Nota de Débito",61:"Nota de Crédito"};
+const TIPOS_AFECTO_V = [33,46,56,61];
+const TIPOS_RECEPTOR_V = [33,34,46,52,56,61];
+const TIPOS_REF_V = [56,61];
+
+function vRUT(r){ return r && /^[0-9]+-([0-9]|K)$/.test(r) && r.length<=10; }
+function vFecha(d){
+  if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d)) return {ok:false,msg:`Formato incorrecto: "${d}". Debe ser AAAA-MM-DD`};
+  const y=parseInt(d.substring(0,4));
+  if(y<2000) return {ok:false,msg:`Año ${y} inválido — FechaType SII: mínimo 2000-01-01`};
+  if(y>2050) return {ok:false,msg:`Fecha "${d}" inválida — FechaType SII: máximo 2050-12-31`};
+  return {ok:true};
+}
+function vFechaRef(d){
+  if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d)) return {ok:false,msg:`Formato incorrecto: "${d}". Debe ser AAAA-MM-DD`};
+  const y=parseInt(d.substring(0,4));
+  if(y<1950) return {ok:false,msg:`Año ${y} inválido — FchRef SII: mínimo 1950-01-01`};
+  if(y>2050) return {ok:false,msg:`Fecha "${d}" inválida — FchRef SII: máximo 2050-12-31`};
+  return {ok:true};
+}
+function gTag(p,t){const e=p.getElementsByTagName(t);return e.length>0?e[0]:null;}
+function gTxt(p,t){const e=gTag(p,t);return e?e.textContent.trim():null;}
+function chkV(errs,p,tag,max,req=false){
+  const v=gTxt(p,tag);
+  if(!v){if(req)errs.push({tag,msg:`Falta el tag <${tag}>`,level:"error"});return;}
+  if(v.length>max)errs.push({tag,msg:`<${tag}> supera ${max} caracteres (actual: ${v.length})`,level:"error"});
+}
+
+function validarXML(xmlStr){
+  const errors=[],warnings=[],info=[];
+  let doc;
+  try{
+    doc=new DOMParser().parseFromString(xmlStr.trim(),"text/xml");
+    const pe=doc.querySelector("parsererror");
+    if(pe){errors.push({tag:"XML",msg:`XML mal formado: ${pe.textContent.substring(0,200)}`,level:"error"});return{errors,warnings,info};}
+  }catch(e){errors.push({tag:"XML",msg:e.message,level:"error"});return{errors,warnings,info};}
+
+  const docNode=doc.querySelector("Documento")||doc.querySelector("DTE");
+  if(!docNode){errors.push({tag:"Estructura",msg:"No se encontró <Documento> o <DTE>",level:"error"});return{errors,warnings,info};}
+  const enc=gTag(docNode,"Encabezado");
+  if(!enc){errors.push({tag:"Encabezado",msg:"Falta <Encabezado>",level:"error"});return{errors,warnings,info};}
+  const idDoc=gTag(enc,"IdDoc");
+  if(!idDoc){errors.push({tag:"IdDoc",msg:"Falta <IdDoc>",level:"error"});return{errors,warnings,info};}
+
+  const tStr=gTxt(idDoc,"TipoDTE");
+  if(!tStr){errors.push({tag:"TipoDTE",msg:"Falta <TipoDTE>",level:"error"});return{errors,warnings,info};}
+  const tipoDTE=parseInt(tStr);
+  if(!TIPOS_DTE_V[tipoDTE]){errors.push({tag:"TipoDTE",msg:`TipoDTE "${tStr}" no válido. Tipos: ${Object.keys(TIPOS_DTE_V).join(", ")}`,level:"error"});return{errors,warnings,info};}
+  info.push({tag:"TipoDTE",msg:`TipoDTE = ${tipoDTE} — ${TIPOS_DTE_V[tipoDTE]} ✓`,level:"ok"});
+
+  const folio=gTxt(idDoc,"Folio");
+  if(!folio)errors.push({tag:"Folio",msg:"Falta <Folio>",level:"error"});
+  else if(!/^\d+$/.test(folio)||folio.length>10||parseInt(folio)<1)errors.push({tag:"Folio",msg:`<Folio> inválido: "${folio}". Debe ser entero positivo, máx 10 dígitos`,level:"error"});
+  else info.push({tag:"Folio",msg:`Folio = ${folio} ✓`,level:"ok"});
+
+  const fchEmis=gTxt(idDoc,"FchEmis");
+  if(!fchEmis)errors.push({tag:"FchEmis",msg:"Falta <FchEmis>",level:"error"});
+  else{const v=vFecha(fchEmis);if(!v.ok)errors.push({tag:"FchEmis",msg:`<FchEmis> ${v.msg}`,level:"error"});else info.push({tag:"FchEmis",msg:`FchEmis = ${fchEmis} ✓`,level:"ok"});}
+
+  const fchVenc=gTxt(idDoc,"FchVenc");
+  if(fchVenc){const v=vFecha(fchVenc);if(!v.ok)errors.push({tag:"FchVenc",msg:`<FchVenc> ${v.msg}`,level:"error"});else info.push({tag:"FchVenc",msg:`FchVenc = ${fchVenc} ✓`,level:"ok"});}
+
+  const fchCancel=gTxt(idDoc,"FchCancel");
+  if(fchCancel){const v=vFecha(fchCancel);if(!v.ok)errors.push({tag:"FchCancel",msg:`<FchCancel> ${v.msg}`,level:"error"});}
+
+  const fmaPago=gTxt(idDoc,"FmaPago");
+  if(fmaPago&&!["1","2","3"].includes(fmaPago))errors.push({tag:"FmaPago",msg:`<FmaPago> inválido: "${fmaPago}". Valores: 1=Contado, 2=Crédito, 3=Sin costo`,level:"error"});
+
+  if(tipoDTE===52){
+    const it=gTxt(idDoc,"IndTraslado");
+    if(!it)errors.push({tag:"IndTraslado",msg:"Falta <IndTraslado> — obligatorio en Guías de Despacho",level:"error"});
+    else if(!["1","2","3","4","5","6","7","8","9"].includes(it))errors.push({tag:"IndTraslado",msg:`<IndTraslado> inválido: "${it}". Valores según Res. SII N°154: 1=Venta, 2=Ventas por efectuar, 3=Consignaciones, 4=Entrega gratuita, 5=Traslados internos, 6=Otros no venta, 7=Venta exportación, 8=Traslado exportación`,level:"error"});
+    else info.push({tag:"IndTraslado",msg:`IndTraslado = ${it} ✓`,level:"ok"});
+
+    // Res. SII N°154 vigente desde 01-05-2026
+    const fchSalida=gTxt(idDoc,"FchSalida");
+    if(fchSalida){const v=vFecha(fchSalida);if(!v.ok)errors.push({tag:"FchSalida",msg:`<FchSalida> ${v.msg}`,level:"error"});else info.push({tag:"FchSalida",msg:`FchSalida = ${fchSalida} ✓`,level:"ok"});}
+    else pushWarn(warnings,"FchSalida","<FchSalida> requerido en Guías de Despacho según Res. SII N°154 (vigente desde 01-05-2026)");
+
+    const hraSalida=gTxt(idDoc,"HraSalida");
+    if(hraSalida&&!/^\d{2}:\d{2}(:\d{2})?$/.test(hraSalida))errors.push({tag:"HraSalida",msg:`<HraSalida> formato incorrecto: "${hraSalida}". Debe ser HH:MM o HH:MM:SS`,level:"error"});
+    else if(hraSalida)info.push({tag:"HraSalida",msg:`HraSalida = ${hraSalida} ✓`,level:"ok"});
+    else pushWarn(warnings,"HraSalida","<HraSalida> requerido según Res. SII N°154 (vigente desde 01-05-2026)");
+
+    const fchLlegada=gTxt(idDoc,"FchLlegada");
+    if(fchLlegada){const v=vFecha(fchLlegada);if(!v.ok)errors.push({tag:"FchLlegada",msg:`<FchLlegada> ${v.msg}`,level:"error"});else info.push({tag:"FchLlegada",msg:`FchLlegada = ${fchLlegada} ✓`,level:"ok"});}
+  }
+
+  const tpoCtaPago=gTxt(idDoc,"TpoCtaPago");
+  if(tpoCtaPago&&!["AHORRO","CORRIENTE","VISTA"].includes(tpoCtaPago))errors.push({tag:"TpoCtaPago",msg:`<TpoCtaPago> inválido: "${tpoCtaPago}". Valores: AHORRO, CORRIENTE, VISTA`,level:"error"});
+  chkV(errors,idDoc,"TermPagoGlosa",100);
+
+  const emisor=gTag(enc,"Emisor");
+  if(!emisor)errors.push({tag:"Emisor",msg:"Falta <Emisor>",level:"error"});
+  else{
+    const rut=gTxt(emisor,"RUTEmisor");
+    if(!rut)errors.push({tag:"RUTEmisor",msg:"Falta <RUTEmisor>",level:"error"});
+    else if(!vRUT(rut))errors.push({tag:"RUTEmisor",msg:`<RUTEmisor> inválido: "${rut}". Patrón: [0-9]+-([0-9]|K), máx 10 chars`,level:"error"});
+    else info.push({tag:"RUTEmisor",msg:`RUTEmisor = ${rut} ✓`,level:"ok"});
+    chkV(errors,emisor,"RznSoc",100,true);
+    chkV(errors,emisor,"GiroEmis",80,true);
+    chkV(errors,emisor,"Telefono",20);
+    chkV(errors,emisor,"CorreoEmisor",80);
+    chkV(errors,emisor,"DirOrigen",70,true);
+    chkV(errors,emisor,"Sucursal",20);
+    const acteco=gTxt(emisor,"Acteco");
+    if(!acteco)errors.push({tag:"Acteco",msg:"Falta <Acteco>",level:"error"});
+    else if(!/^\d+$/.test(acteco)||acteco.length>6)errors.push({tag:"Acteco",msg:`<Acteco> debe ser numérico máx 6 dígitos. Valor: "${acteco}"`,level:"error"});
+    const cmnaO=gTxt(emisor,"CmnaOrigen");
+    if(!cmnaO)errors.push({tag:"CmnaOrigen",msg:"Falta <CmnaOrigen>",level:"error"});
+    else if(cmnaO.length>20)errors.push({tag:"CmnaOrigen",msg:`<CmnaOrigen> supera 20 caracteres (actual: ${cmnaO.length})`,level:"error"});
+  }
+
+  const receptor=gTag(enc,"Receptor");
+  if(TIPOS_RECEPTOR_V.includes(tipoDTE)&&!receptor)errors.push({tag:"Receptor",msg:`Falta <Receptor> — obligatorio para tipo ${tipoDTE}`,level:"error"});
+  else if(receptor){
+    const rut=gTxt(receptor,"RUTRecep");
+    if(!rut)errors.push({tag:"RUTRecep",msg:"Falta <RUTRecep>",level:"error"});
+    else if(!vRUT(rut))errors.push({tag:"RUTRecep",msg:`<RUTRecep> inválido: "${rut}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+    else info.push({tag:"RUTRecep",msg:`RUTRecep = ${rut} ✓`,level:"ok"});
+    chkV(errors,receptor,"RznSocRecep",100,TIPOS_RECEPTOR_V.includes(tipoDTE));
+    chkV(errors,receptor,"GiroRecep",40);
+    chkV(errors,receptor,"Contacto",80);
+    chkV(errors,receptor,"CorreoRecep",80);
+    chkV(errors,receptor,"DirRecep",70,TIPOS_RECEPTOR_V.includes(tipoDTE));
+    const cmnaR=gTxt(receptor,"CmnaRecep");
+    if(TIPOS_RECEPTOR_V.includes(tipoDTE)&&!cmnaR)errors.push({tag:"CmnaRecep",msg:"Falta <CmnaRecep>",level:"error"});
+    else if(cmnaR&&cmnaR.length>20)errors.push({tag:"CmnaRecep",msg:`<CmnaRecep> supera 20 caracteres (actual: ${cmnaR.length})`,level:"error"});
+  }
+
+  const tot=gTag(enc,"Totales");
+  if(!tot)errors.push({tag:"Totales",msg:"Falta <Totales>",level:"error"});
+  else{
+    const mntTotal=gTxt(tot,"MntTotal");
+    if(!mntTotal)errors.push({tag:"MntTotal",msg:"Falta <MntTotal>",level:"error"});
+    else if(!/^-?\d+$/.test(mntTotal))errors.push({tag:"MntTotal",msg:`<MntTotal> debe ser entero. Valor: "${mntTotal}"`,level:"error"});
+    else info.push({tag:"MntTotal",msg:`MntTotal = ${parseInt(mntTotal).toLocaleString("es-CL")} ✓`,level:"ok"});
+    const neto=gTxt(tot,"MntNeto"),exe=gTxt(tot,"MntExe"),tasa=gTxt(tot,"TasaIVA"),iva=gTxt(tot,"IVA");
+    if(TIPOS_AFECTO_V.includes(tipoDTE)){
+      if(!neto&&!exe)warnings.push({tag:"Totales",msg:"No se encontró <MntNeto> ni <MntExe>. Al menos uno debe estar presente.",level:"warning"});
+      if(neto&&!tasa)warnings.push({tag:"TasaIVA",msg:"Hay <MntNeto> pero falta <TasaIVA>",level:"warning"});
+      if(neto&&!iva)warnings.push({tag:"IVA",msg:"Hay <MntNeto> pero falta <IVA>",level:"warning"});
+      if(neto&&tasa&&iva){
+        const calc=Math.round(parseInt(neto)*parseFloat(tasa)/100),rep=parseInt(iva);
+        if(Math.abs(calc-rep)>1)warnings.push({tag:"IVA",msg:`IVA calculado (${calc.toLocaleString("es-CL")}) difiere del declarado (${rep.toLocaleString("es-CL")})`,level:"warning"});
+        else info.push({tag:"IVA",msg:`IVA = ${rep.toLocaleString("es-CL")} — cuadre correcto ✓`,level:"ok"});
+      }
+    }
+  }
+
+  const dets=docNode.getElementsByTagName("Detalle");
+  if(dets.length===0)errors.push({tag:"Detalle",msg:"No se encontraron líneas de <Detalle>",level:"error"});
+  else{
+    info.push({tag:"Detalle",msg:`Se encontraron ${dets.length} línea(s) de detalle ✓`,level:"ok"});
+    Array.from(dets).forEach((det,i)=>{
+      const l=i+1;
+      const nro=gTxt(det,"NroLinDet");
+      if(nro&&parseInt(nro)>99)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <NroLinDet> supera máximo 99`,level:"error"});
+      const cdg=gTag(det,"CdgItem");
+      if(cdg){
+        const tp=gTxt(cdg,"TpoCodigo"),vl=gTxt(cdg,"VlrCodigo");
+        if(tp&&tp.length>10)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <TpoCodigo> supera 10 caracteres (actual: ${tp.length})`,level:"error"});
+        if(vl&&vl.length>35)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <VlrCodigo> supera 35 caracteres (actual: ${vl.length})`,level:"error"});
+      }
+      const ie=gTxt(det,"IndExe");
+      if(ie&&ie!=="1")errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <IndExe> inválido: "${ie}". Solo se acepta 1`,level:"error"});
+      const nmb=gTxt(det,"NmbItem");
+      if(!nmb)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: Falta <NmbItem>`,level:"error"});
+      else if(nmb.length>80)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <NmbItem> supera 80 caracteres (actual: ${nmb.length})`,level:"error"});
+      const dsc=gTxt(det,"DscItem");
+      if(dsc&&dsc.length>1000)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <DscItem> supera 1000 caracteres (actual: ${dsc.length})`,level:"error"});
+      if(!gTxt(det,"QtyItem"))errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: Falta <QtyItem>`,level:"error"});
+      const unmd=gTxt(det,"UnmdItem");
+      if(unmd&&unmd.length>4)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <UnmdItem> supera 4 caracteres (actual: ${unmd.length})`,level:"error"});
+      if(!gTxt(det,"PrcItem"))errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: Falta <PrcItem>`,level:"error"});
+      const fchVencim=gTxt(det,"FchVencim");
+      if(fchVencim){const v=vFecha(fchVencim);if(!v.ok)errors.push({tag:`Det[${l}]`,msg:`Línea ${l}: <FchVencim> ${v.msg}`,level:"error"});else info.push({tag:`Det[${l}]`,msg:`Línea ${l}: FchVencim = ${fchVencim} ✓`,level:"ok"});}
+    });
+  }
+
+  Array.from(docNode.getElementsByTagName("DscRcgGlobal")).forEach((dr,i)=>{
+    const l=i+1;
+    const tm=gTxt(dr,"TpoMov");if(tm&&!["D","R"].includes(tm))errors.push({tag:`DscRcg[${l}]`,msg:`D/R ${l}: <TpoMov> inválido: "${tm}". Valores: D o R`,level:"error"});
+    const tv=gTxt(dr,"TpoValor");if(tv&&!["$","%"].includes(tv))errors.push({tag:`DscRcg[${l}]`,msg:`D/R ${l}: <TpoValor> inválido: "${tv}". Valores: $ o %`,level:"error"});
+    const gl=gTxt(dr,"GlosaDR");if(gl&&gl.length>45)errors.push({tag:`DscRcg[${l}]`,msg:`D/R ${l}: <GlosaDR> supera 45 caracteres (actual: ${gl.length})`,level:"error"});
+  });
+
+  if(TIPOS_REF_V.includes(tipoDTE)){
+    const refs=docNode.getElementsByTagName("Referencia");
+    if(refs.length===0)errors.push({tag:"Referencia",msg:`Falta <Referencia> — obligatorio para tipo ${tipoDTE}`,level:"error"});
+    else{
+      info.push({tag:"Referencia",msg:`Se encontraron ${refs.length} referencia(s) ✓`,level:"ok"});
+      Array.from(refs).forEach((ref,i)=>{
+        const l=i+1;
+        const tpoDoc=gTxt(ref,"TpoDocRef")||gTxt(ref,"TpoDTE");
+        if(!tpoDoc) errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: Falta <TpoDocRef>`,level:"error"});
+
+        const folioRef=gTxt(ref,"FolioRef");
+        if(!folioRef) {
+          errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: Falta <FolioRef>`,level:"error"});
+        } else if(folioRef.length>18) {
+          errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FolioRef> supera 18 caracteres (FolioRType). Actual: ${folioRef.length}`,level:"error"});
+        } else {
+          // Solo exige numérico si el TpoDocRef es un tipo DTE conocido
+          const esDTE = tpoDoc && TIPOS_DTE_V[parseInt(tpoDoc)];
+          if(esDTE && !/^\d+$/.test(folioRef)) {
+            errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FolioRef> debe ser numérico cuando referencia un DTE (tipo ${tpoDoc}). Valor: "${folioRef}"`,level:"error"});
+          } else {
+            info.push({tag:`Ref[${l}]`,msg:`Ref ${l}: FolioRef = "${folioRef}" ✓`,level:"ok"});
+          }
+        }
+        const fchRef=gTxt(ref,"FchRef");
+        if(!fchRef)errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: Falta <FchRef>`,level:"error"});
+        else{const v=vFechaRef(fchRef);if(!v.ok)errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FchRef> ${v.msg}`,level:"error"});else info.push({tag:`Ref[${l}]`,msg:`Ref ${l}: FchRef = ${fchRef} ✓`,level:"ok"});}
+        const codRef=gTxt(ref,"CodRef");
+        if(codRef&&!["1","2","3"].includes(codRef))errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <CodRef> inválido: "${codRef}". Valores: 1=Anula, 2=Corrige monto, 3=Corrige texto`,level:"error"});
+        const razon=gTxt(ref,"RazonRef");
+        if(razon&&razon.length>90)errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <RazonRef> supera 90 caracteres (actual: ${razon.length})`,level:"error"});
+      });
+    }
+  } else {
+    Array.from(docNode.getElementsByTagName("Referencia")).forEach((ref,i)=>{
+      const l=i+1;
+
+      // Validar TpoDocRef
+      const tpoDocOpt=gTxt(ref,"TpoDocRef")||gTxt(ref,"TpoDTE");
+      if(!tpoDocOpt) errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: Falta <TpoDocRef>`,level:"error"});
+
+      // Validar FolioRef — FolioRType: string máx 18, numérico solo si referencia DTE
+      const fr=gTxt(ref,"FolioRef");
+      if(!fr) {
+        errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: Falta <FolioRef>`,level:"error"});
+      } else if(fr.length>18) {
+        errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FolioRef> supera 18 caracteres (actual: ${fr.length})`,level:"error"});
+      } else {
+        const esDTEOpt=tpoDocOpt&&TIPOS_DTE_V[parseInt(tpoDocOpt)];
+        if(esDTEOpt&&!/^\d+$/.test(fr)) {
+          errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FolioRef> debe ser numérico cuando referencia un DTE (tipo ${tpoDocOpt}). Valor: "${fr}"`,level:"error"});
+        }
+      }
+
+      // Validar FchRef
+      const fchRef=gTxt(ref,"FchRef");
+      if(fchRef){const v=vFechaRef(fchRef);if(!v.ok)errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <FchRef> ${v.msg}`,level:"error"});}
+
+      // Validar CodRef
+      const codRefOpt=gTxt(ref,"CodRef");
+      if(codRefOpt&&!["1","2","3"].includes(codRefOpt)) {
+        errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <CodRef> inválido: "${codRefOpt}". Valores: 1=Anula, 2=Corrige monto, 3=Corrige texto`,level:"error"});
+      }
+
+      // Validar RazonRef
+      const razonRefOpt=gTxt(ref,"RazonRef");
+      if(razonRefOpt&&razonRefOpt.length>90) {
+        errors.push({tag:`Ref[${l}]`,msg:`Ref ${l}: <RazonRef> supera 90 caracteres (actual: ${razonRefOpt.length})`,level:"error"});
+      }
+    });
+  }
+
+  const transp=gTag(docNode,"Transporte");
+  if(tipoDTE===52&&transp){
+    const pat=gTxt(transp,"Patente");
+    if(pat&&pat.length>8)errors.push({tag:"Patente",msg:`<Patente> supera 8 caracteres (actual: ${pat.length})`,level:"error"});
+    const rutC=gTxt(transp,"RUTChofer");
+    if(rutC&&!vRUT(rutC))errors.push({tag:"RUTChofer",msg:`<RUTChofer> inválido: "${rutC}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+    chkV(errors,transp,"NombreChofer",30);
+    chkV(errors,transp,"DirDest",70);
+    chkV(errors,transp,"NomCiaTransp",40);
+    chkV(errors,transp,"Sello",20);
+    chkV(errors,transp,"EmisorSello",70);
+    chkV(errors,transp,"IdContainer",25);
+    chkV(errors,transp,"Marcas",255);
+
+    // Res. SII N°154 — nuevos tags obligatorios desde 01-05-2026
+    const rutTrans=gTxt(transp,"RUTTrans");
+    if(rutTrans){
+      if(!vRUT(rutTrans))errors.push({tag:"RUTTrans",msg:`<RUTTrans> inválido: "${rutTrans}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+      else info.push({tag:"RUTTrans",msg:`RUTTrans = ${rutTrans} ✓`,level:"ok"});
+    } else pushWarn(warnings,"RUTTrans","<RUTTrans> requerido en Guías de Despacho según Res. SII N°154 (vigente desde 01-05-2026)");
+
+    const patenteCarro=gTxt(transp,"PatenteCarro");
+    if(patenteCarro&&patenteCarro.length>8)errors.push({tag:"PatenteCarro",msg:`<PatenteCarro> supera 8 caracteres (actual: ${patenteCarro.length})`,level:"error"});
+  }
+
+  const sig=doc.querySelector("Signature")||doc.querySelector("SignatureValue");
+  if(!sig)warnings.push({tag:"Firma",msg:"No se encontró firma digital <Signature>. El DTE debe estar firmado para ser válido ante el SII.",level:"warning"});
+  else info.push({tag:"Firma",msg:"Firma digital presente ✓",level:"ok"});
+
+  return{errors,warnings,info};
+}
+
+function validarEnvioDTE(xmlStr){
+  const errors=[],warnings=[],info=[];
+  let doc;
+  try{
+    doc=new DOMParser().parseFromString(xmlStr.trim(),"text/xml");
+    const pe=doc.querySelector("parsererror");
+    if(pe){errors.push({tag:"XML",msg:`XML mal formado: ${pe.textContent.substring(0,200)}`,level:"error"});return{errors,warnings,info};}
+  }catch(e){errors.push({tag:"XML",msg:e.message,level:"error"});return{errors,warnings,info};}
+
+  // Verificar nodo raíz EnvioDTE
+  const envioDTE=doc.querySelector("EnvioDTE");
+  if(!envioDTE){errors.push({tag:"EnvioDTE",msg:"No se encontró el nodo raíz <EnvioDTE>",level:"error"});return{errors,warnings,info};}
+  info.push({tag:"EnvioDTE",msg:"Nodo <EnvioDTE> encontrado ✓",level:"ok"});
+
+  // SetDTE
+  const setDTE=gTag(envioDTE,"SetDTE");
+  if(!setDTE){errors.push({tag:"SetDTE",msg:"Falta el nodo <SetDTE>",level:"error"});return{errors,warnings,info};}
+  info.push({tag:"SetDTE",msg:"Nodo <SetDTE> encontrado ✓",level:"ok"});
+
+  // Caratula
+  const caratula=gTag(setDTE,"Caratula");
+  if(!caratula){errors.push({tag:"Caratula",msg:"Falta el nodo <Caratula>",level:"error"});}
+  else{
+    // RutEmisor: RUTType
+    const rutEmisor=gTxt(caratula,"RutEmisor");
+    if(!rutEmisor)errors.push({tag:"RutEmisor",msg:"Falta <RutEmisor> en Caratula",level:"error"});
+    else if(!vRUT(rutEmisor))errors.push({tag:"RutEmisor",msg:`<RutEmisor> inválido: "${rutEmisor}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+    else info.push({tag:"RutEmisor",msg:`RutEmisor = ${rutEmisor} ✓`,level:"ok"});
+
+    // RutEnvia: RUTType
+    const rutEnvia=gTxt(caratula,"RutEnvia");
+    if(!rutEnvia)errors.push({tag:"RutEnvia",msg:"Falta <RutEnvia> en Caratula",level:"error"});
+    else if(!vRUT(rutEnvia))errors.push({tag:"RutEnvia",msg:`<RutEnvia> inválido: "${rutEnvia}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+    else info.push({tag:"RutEnvia",msg:`RutEnvia = ${rutEnvia} ✓`,level:"ok"});
+
+    // RutReceptor: RUTType (76354771-K = SII)
+    const rutReceptor=gTxt(caratula,"RutReceptor");
+    if(!rutReceptor)errors.push({tag:"RutReceptor",msg:"Falta <RutReceptor> en Caratula",level:"error"});
+    else if(!vRUT(rutReceptor))errors.push({tag:"RutReceptor",msg:`<RutReceptor> inválido: "${rutReceptor}". Patrón: [0-9]+-([0-9]|K)`,level:"error"});
+    else info.push({tag:"RutReceptor",msg:`RutReceptor = ${rutReceptor} ✓`,level:"ok"});
+
+    // FchResol: FechaType (2000-01-01 a 2050-12-31)
+    const fchResol=gTxt(caratula,"FchResol");
+    if(!fchResol)errors.push({tag:"FchResol",msg:"Falta <FchResol> (fecha resolución SII)",level:"error"});
+    else{const v=vFecha(fchResol);if(!v.ok)errors.push({tag:"FchResol",msg:`<FchResol> ${v.msg}`,level:"error"});else info.push({tag:"FchResol",msg:`FchResol = ${fchResol} ✓`,level:"ok"});}
+
+    // NroResol: NroResolType = nonNegativeInteger, máx 6 dígitos
+    const nroResol=gTxt(caratula,"NroResol");
+    if(!nroResol)errors.push({tag:"NroResol",msg:"Falta <NroResol> (número resolución SII)",level:"error"});
+    else if(!/^\d+$/.test(nroResol)||nroResol.length>6)errors.push({tag:"NroResol",msg:`<NroResol> debe ser numérico máx 6 dígitos. Valor: "${nroResol}"`,level:"error"});
+    else info.push({tag:"NroResol",msg:`NroResol = ${nroResol} ✓`,level:"ok"});
+
+    // TmstFirmaEnv: FechaHoraType (AAAA-MM-DDTHH:MM:SS)
+    const tmst=gTxt(caratula,"TmstFirmaEnv");
+    if(!tmst)errors.push({tag:"TmstFirmaEnv",msg:"Falta <TmstFirmaEnv> (timestamp firma envío)",level:"error"});
+    else if(!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(tmst))errors.push({tag:"TmstFirmaEnv",msg:`<TmstFirmaEnv> formato incorrecto: "${tmst}". Debe ser AAAA-MM-DDTHH:MM:SS`,level:"error"});
+    else{
+      const fecha=tmst.substring(0,10);
+      const v=vFecha(fecha);
+      if(!v.ok)errors.push({tag:"TmstFirmaEnv",msg:`<TmstFirmaEnv> ${v.msg}`,level:"error"});
+      else info.push({tag:"TmstFirmaEnv",msg:`TmstFirmaEnv = ${tmst} ✓`,level:"ok"});
+    }
+
+    // SubTotDTE: máx 20 ocurrencias
+    const subTots=caratula.getElementsByTagName("SubTotDTE");
+    if(subTots.length===0)warnings.push({tag:"SubTotDTE",msg:"No se encontraron elementos <SubTotDTE>",level:"warning"});
+    else if(subTots.length>20)errors.push({tag:"SubTotDTE",msg:`Se encontraron ${subTots.length} elementos <SubTotDTE>. Máximo permitido: 20`,level:"error"});
+    else info.push({tag:"SubTotDTE",msg:`SubTotDTE: ${subTots.length} tipo(s) declarado(s) ✓`,level:"ok"});
+  }
+
+  // DTEs en el sobre: máx 2000
+  const dtes=setDTE?setDTE.getElementsByTagName("DTE"):[];
+  if(dtes.length===0)errors.push({tag:"DTE",msg:"No se encontraron documentos <DTE> dentro del SetDTE",level:"error"});
+  else if(dtes.length>2000)errors.push({tag:"DTE",msg:`El sobre contiene ${dtes.length} DTEs. El máximo permitido por envío es 2.000`,level:"error"});
+  else info.push({tag:"DTE",msg:`Se encontraron ${dtes.length} DTE(s) en el sobre ✓`,level:"ok"});
+
+  // Firma del sobre
+  const sig=doc.querySelector("Signature")||doc.querySelector("SignatureValue");
+  if(!sig)errors.push({tag:"Firma",msg:"Falta firma digital <Signature> del sobre EnvioDTE — obligatoria",level:"error"});
+  else info.push({tag:"Firma",msg:"Firma digital del sobre presente ✓",level:"ok"});
+
+  return{errors,warnings,info};
+}
+
+function CopyButton({ texto }) {
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <button onClick={() => { navigator.clipboard.writeText(texto); setCopiado(true); setTimeout(() => setCopiado(false), 2000); }}
+      style={{ fontSize: 11, padding: "4px 10px", borderRadius: 6, border: "1px solid #c7d2fe", background: copiado ? "#4338ca" : "#eef2ff", color: copiado ? "#fff" : "#4338ca", cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+      {copiado ? "✓ Copiado" : "📋 Copiar"}
+    </button>
+  );
+}
+
+function ValidadorXMLSection({xmlInput,setXmlInput,xmlResultado,setXmlResultado,xmlLoading,setXmlLoading}){
+  const [subTab, setSubTab] = useState("validar");
+  const [modoXML, setModoXML] = useState("dte"); // "dte" o "envio"
+
+  const EJ33=`<?xml version="1.0" encoding="ISO-8859-1"?>\n<DTE version="1.0">\n  <Documento ID="F33T123">\n    <Encabezado>\n      <IdDoc><TipoDTE>33</TipoDTE><Folio>123</Folio><FchEmis>2025-06-24</FchEmis><FmaPago>1</FmaPago></IdDoc>\n      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>\n      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>\n      <Totales><MntNeto>100000</MntNeto><TasaIVA>19</TasaIVA><IVA>19000</IVA><MntTotal>119000</MntTotal></Totales>\n    </Encabezado>\n    <Detalle><NroLinDet>1</NroLinDet><NmbItem>SERVICIO EJEMPLO</NmbItem><QtyItem>1</QtyItem><PrcItem>100000</PrcItem><MontoItem>100000</MontoItem></Detalle>\n  </Documento>\n</DTE>`;
+
+  const EJ61=`<?xml version="1.0" encoding="ISO-8859-1"?>\n<DTE version="1.0">\n  <Documento ID="F61T45">\n    <Encabezado>\n      <IdDoc><TipoDTE>61</TipoDTE><Folio>45</Folio><FchEmis>2025-06-24</FchEmis></IdDoc>\n      <Emisor><RUTEmisor>12345678-9</RUTEmisor><RznSoc>EMPRESA EJEMPLO LTDA</RznSoc><GiroEmis>COMERCIO</GiroEmis><Acteco>519000</Acteco><DirOrigen>AV EJEMPLO 123</DirOrigen><CmnaOrigen>SANTIAGO</CmnaOrigen></Emisor>\n      <Receptor><RUTRecep>98765432-1</RUTRecep><RznSocRecep>CLIENTE SA</RznSocRecep><DirRecep>CALLE 456</DirRecep><CmnaRecep>PROVIDENCIA</CmnaRecep></Receptor>\n      <Totales><MntNeto>50000</MntNeto><TasaIVA>19</TasaIVA><IVA>9500</IVA><MntTotal>59500</MntTotal></Totales>\n    </Encabezado>\n    <Referencia><NroLinRef>1</NroLinRef><TpoDocRef>33</TpoDocRef><FolioRef>100</FolioRef><FchRef>2025-06-20</FchRef><CodRef>1</CodRef><RazonRef>ANULACION</RazonRef></Referencia>\n    <Detalle><NroLinDet>1</NroLinDet><NmbItem>DEVOLUCION</NmbItem><QtyItem>1</QtyItem><PrcItem>50000</PrcItem><MontoItem>50000</MontoItem></Detalle>\n  </Documento>\n</DTE>`;
+
+  function runValidar(){
+    if(!xmlInput.trim())return;
+    setXmlLoading(true);
+    setTimeout(()=>{
+      const res = modoXML==="envio" ? validarEnvioDTE(xmlInput) : validarXML(xmlInput);
+      setXmlResultado(res);
+      setXmlLoading(false);
+    },200);
+  }
+
+  const tE=xmlResultado?.errors.length||0,tW=xmlResultado?.warnings.length||0,tOk=xmlResultado?.info.length||0;
+  const esValido=xmlResultado&&tE===0;
+
+  const REFS_TAGS = [
+    { sec:"IdDoc", items:[
+      {tag:"TipoDTE",req:"SÍ",desc:"Tipo DTE (33,34,39,41,46,52,56,61)",max:"-"},
+      {tag:"Folio",req:"SÍ",desc:"FolioType: positiveInteger, máx 10 dígitos",max:"10 díg"},
+      {tag:"FchEmis",req:"SÍ",desc:"FechaType: 2000-01-01 a 2050-12-31",max:"-"},
+      {tag:"FchVenc",req:"NO",desc:"FechaType: 2000-01-01 a 2050-12-31",max:"-"},
+      {tag:"FmaPago",req:"NO",desc:"1=Contado 2=Crédito 3=Sin costo",max:"-"},
+      {tag:"IndTraslado",req:"52*",desc:"Obligatorio tipo 52. Valores 1-9",max:"-"},
+      {tag:"TpoCtaPago",req:"NO",desc:"AHORRO / CORRIENTE / VISTA",max:"10"},
+      {tag:"TermPagoGlosa",req:"NO",desc:"Glosa término de pago",max:"100"},
+    ]},
+    { sec:"Emisor", items:[
+      {tag:"RUTEmisor",req:"SÍ",desc:"Patrón [0-9]+-([0-9]|K)",max:"10"},
+      {tag:"RznSoc",req:"SÍ",desc:"Razón social",max:"100"},
+      {tag:"GiroEmis",req:"SÍ",desc:"Giro comercial",max:"80"},
+      {tag:"Acteco",req:"SÍ",desc:"Código actividad económica",max:"6 díg"},
+      {tag:"DirOrigen",req:"SÍ",desc:"Dirección",max:"70"},
+      {tag:"CmnaOrigen",req:"SÍ",desc:"Comuna",max:"20"},
+      {tag:"Telefono",req:"NO",desc:"Teléfono",max:"20"},
+      {tag:"CorreoEmisor",req:"NO",desc:"Email",max:"80"},
+    ]},
+    { sec:"Receptor", items:[
+      {tag:"RUTRecep",req:"SÍ*",desc:"Patrón [0-9]+-([0-9]|K) (*oblig. 33,34,46,52,56,61)",max:"10"},
+      {tag:"RznSocRecep",req:"SÍ*",desc:"Razón social receptor",max:"100"},
+      {tag:"GiroRecep",req:"NO",desc:"Giro receptor",max:"40"},
+      {tag:"Contacto",req:"NO",desc:"Contacto",max:"80"},
+      {tag:"CorreoRecep",req:"NO",desc:"Email",max:"80"},
+      {tag:"DirRecep",req:"SÍ*",desc:"Dirección receptor",max:"70"},
+      {tag:"CmnaRecep",req:"SÍ*",desc:"Comuna receptor",max:"20"},
+    ]},
+    { sec:"Totales", items:[
+      {tag:"MntNeto",req:"COND",desc:"Monto neto (18 dígitos)",max:"18 díg"},
+      {tag:"MntExe",req:"COND",desc:"Monto exento (18 dígitos)",max:"18 díg"},
+      {tag:"TasaIVA",req:"COND",desc:"Tasa IVA (ej: 19)",max:"-"},
+      {tag:"IVA",req:"COND",desc:"Monto IVA (18 dígitos)",max:"18 díg"},
+      {tag:"MntTotal",req:"SÍ",desc:"Monto total ValorType (18 dígitos)",max:"18 díg"},
+    ]},
+    { sec:"Detalle", items:[
+      {tag:"NroLinDet",req:"NO",desc:"Nº línea (maxInclusive=99)",max:"99"},
+      {tag:"TpoCodigo",req:"NO",desc:"Tipo código ítem",max:"10"},
+      {tag:"VlrCodigo",req:"NO",desc:"Valor código ítem",max:"35"},
+      {tag:"IndExe",req:"NO",desc:"Indicador exento (solo valor 1)",max:"-"},
+      {tag:"NmbItem",req:"SÍ",desc:"Nombre ítem",max:"80"},
+      {tag:"DscItem",req:"NO",desc:"Descripción ítem",max:"1000"},
+      {tag:"QtyItem",req:"SÍ",desc:"Cantidad",max:"-"},
+      {tag:"UnmdItem",req:"NO",desc:"Unidad de medida",max:"4"},
+      {tag:"PrcItem",req:"SÍ",desc:"Precio unitario",max:"-"},
+      {tag:"FchVencim",req:"NO",desc:"Fecha vencimiento ítem — FechaType: máx 2050-12-31",max:"-"},
+    ]},
+    { sec:"DscRcgGlobal", items:[
+      {tag:"TpoMov",req:"SÍ",desc:"D=Descuento R=Recargo",max:"1"},
+      {tag:"GlosaDR",req:"NO",desc:"Glosa",max:"45"},
+      {tag:"TpoValor",req:"SÍ",desc:"$ o %",max:"1"},
+      {tag:"IndExeDR",req:"NO",desc:"Indicador exento (solo valor 1)",max:"-"},
+    ]},
+    { sec:"Referencia (56,61)", items:[
+      {tag:"TpoDocRef",req:"SÍ",desc:"Tipo doc referenciado",max:"3"},
+      {tag:"FolioRef",req:"SÍ",desc:"FolioRType: string alfanumérico (si DTE → numérico)",max:"18"},
+      {tag:"FchRef",req:"SÍ",desc:"Rango especial: 1950-01-01 a 2050-12-31",max:"-"},
+      {tag:"CodRef",req:"NO",desc:"1=Anula 2=Corrige monto 3=Corrige texto",max:"-"},
+      {tag:"RazonRef",req:"NO",desc:"Razón referencia",max:"90"},
+    ]},
+    { sec:"Transporte (52)", items:[
+      {tag:"Patente",req:"NO",desc:"Patente vehículo",max:"8"},
+      {tag:"RUTChofer",req:"NO",desc:"Patrón [0-9]+-([0-9]|K)",max:"10"},
+      {tag:"NombreChofer",req:"NO",desc:"Nombre chofer",max:"30"},
+      {tag:"DirDest",req:"NO",desc:"Dirección destino",max:"70"},
+      {tag:"NomCiaTransp",req:"NO",desc:"Nombre compañía",max:"40"},
+      {tag:"Sello",req:"NO",desc:"Sello",max:"20"},
+      {tag:"EmisorSello",req:"NO",desc:"Emisor sello",max:"70"},
+      {tag:"IdContainer",req:"NO",desc:"ID contenedor",max:"25"},
+      {tag:"Marcas",req:"NO",desc:"Marcas",max:"255"},
+    ]},
+  ];
+
+  const navTabStyle = (active) => ({
+    padding:"6px 14px", borderRadius:6, fontSize:11, fontWeight:600, cursor:"pointer",
+    border:"none", fontFamily:"inherit",
+    background: active ? "#4338ca" : "#f3f4f6",
+    color: active ? "#fff" : "#555",
+  });
+
+  return (
+    <div>
+      {/* Sub-tabs */}
+      <div style={{display:"flex",gap:6,marginBottom:14}}>
+        <button onClick={()=>setSubTab("validar")} style={navTabStyle(subTab==="validar")}>🔍 Validar XML</button>
+        <button onClick={()=>setSubTab("referencia")} style={navTabStyle(subTab==="referencia")}>📋 Tags obligatorios</button>
+      </div>
+
+      {subTab==="validar" && <>
+        <div style={{background:"#fff",borderRadius:12,padding:"14px 16px",marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          {/* Selector de modo */}
+          <div style={{display:"flex",gap:6,marginBottom:12}}>
+            <button onClick={()=>{setModoXML("dte");setXmlResultado(null);}} style={{padding:"5px 14px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",border:modoXML==="dte"?"1.5px solid #4338ca":"1px solid #ddd",background:modoXML==="dte"?"#eef2ff":"#f9fafb",color:modoXML==="dte"?"#3730a3":"#555"}}>📄 DTE individual</button>
+            <button onClick={()=>{setModoXML("envio");setXmlResultado(null);}} style={{padding:"5px 14px",borderRadius:20,fontSize:11,fontWeight:600,cursor:"pointer",fontFamily:"inherit",border:modoXML==="envio"?"1.5px solid #4338ca":"1px solid #ddd",background:modoXML==="envio"?"#eef2ff":"#f9fafb",color:modoXML==="envio"?"#3730a3":"#555"}}>📦 Sobre EnvioDTE</button>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <span style={{fontSize:11,fontWeight:600,color:"#6366f1",textTransform:"uppercase",letterSpacing:".07em"}}>{modoXML==="envio"?"Sobre EnvioDTE":"XML del DTE"}</span>
+            <div style={{display:"flex",gap:6}}>
+              {modoXML==="dte" && <>
+                <button onClick={()=>{setXmlInput(EJ33);setXmlResultado(null);}} style={{fontSize:11,padding:"3px 9px",borderRadius:6,border:"1px solid #e5e7eb",background:"#f9fafb",color:"#555",cursor:"pointer",fontFamily:"inherit"}}>Ej. F33</button>
+                <button onClick={()=>{setXmlInput(EJ61);setXmlResultado(null);}} style={{fontSize:11,padding:"3px 9px",borderRadius:6,border:"1px solid #e5e7eb",background:"#f9fafb",color:"#555",cursor:"pointer",fontFamily:"inherit"}}>Ej. NC61</button>
+              </>}
+              <button onClick={()=>{setXmlInput("");setXmlResultado(null);}} style={{fontSize:11,padding:"3px 9px",borderRadius:6,border:"1px solid #e5e7eb",background:"#f9fafb",color:"#555",cursor:"pointer",fontFamily:"inherit"}}>✕ Limpiar</button>
+            </div>
+          </div>
+          <textarea value={xmlInput} onChange={e=>{setXmlInput(e.target.value);setXmlResultado(null);}}
+            placeholder={modoXML==="envio"?"Pega aquí el XML del sobre EnvioDTE...":"Pega aquí el XML del DTE (tipos 33, 34, 39, 41, 46, 52, 56, 61)..."}
+            style={{width:"100%",height:200,padding:"8px 10px",border:"1.5px solid #e5e7eb",borderRadius:8,fontSize:11,fontFamily:"Consolas,monospace",resize:"vertical",boxSizing:"border-box",background:"#fafafa"}}/>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8}}>
+            <span style={{fontSize:11,color:"#9ca3af"}}>{xmlInput.length.toLocaleString()} caracteres</span>
+            <button onClick={runValidar} disabled={!xmlInput.trim()||xmlLoading} style={{padding:"8px 22px",fontSize:13,fontWeight:600,cursor:xmlInput.trim()?"pointer":"default",borderRadius:8,background:xmlInput.trim()?"#4338ca":"#9ca3af",color:"#fff",border:"none",fontFamily:"inherit"}}>
+              {xmlLoading?"Validando…":"🔍 Validar XML"}
+            </button>
+          </div>
+        </div>
+
+        {xmlResultado&&<>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+            {[[tE,"❌ Errores",tE>0?"#fef2f2":"#f0fdf4",tE>0?"#dc2626":"#16a34a",tE>0?"#fca5a5":"#86efac"],
+              [tW,"⚠️ Advertencias",tW>0?"#fffbeb":"#f9fafb",tW>0?"#d97706":"#9ca3af",tW>0?"#fcd34d":"#e5e7eb"],
+              [tOk,"✅ Correctos","#f0fdf4","#16a34a","#86efac"]
+            ].map(([n,label,bg,color,border],i)=>(
+              <div key={i} style={{background:bg,border:`1.5px solid ${border}`,borderRadius:10,padding:"10px 14px",textAlign:"center"}}>
+                <div style={{fontSize:22,fontWeight:700,color}}>{n}</div>
+                <div style={{fontSize:11,color,fontWeight:600}}>{label}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{background:esValido?"#f0fdf4":"#fef2f2",border:`2px solid ${esValido?"#16a34a":"#dc2626"}`,borderRadius:10,padding:"10px 16px",marginBottom:12,textAlign:"center"}}>
+            <div style={{fontSize:14,fontWeight:700,color:esValido?"#16a34a":"#dc2626"}}>
+              {esValido?"✅ XML válido — estructura correcta según esquema SII":`❌ Se encontraron ${tE} error(es) que deben corregirse`}
+            </div>
+            {tW>0&&<div style={{fontSize:12,color:"#d97706",marginTop:3}}>⚠️ {tW} advertencia(s) para revisar</div>}
+          </div>
+          {[
+            {items:xmlResultado.errors,color:"#dc2626",bg:"#fef2f2",border:"#dc2626",badgeBg:"#fecaca",titulo:"❌ Errores"},
+            {items:xmlResultado.warnings,color:"#d97706",bg:"#fffbeb",border:"#d97706",badgeBg:"#fef3c7",titulo:"⚠️ Advertencias"},
+            {items:xmlResultado.info,color:"#16a34a",bg:"#f0fdf4",border:"#16a34a",badgeBg:"#bbf7d0",titulo:"✅ Tags correctos"},
+          ].filter(s=>s.items.length>0).map((sec,si)=>(
+            <div key={si} style={{background:"#fff",borderRadius:12,padding:"12px 16px",marginBottom:10,boxShadow:"0 1px 4px rgba(0,0,0,0.06)",border:`1px solid ${sec.border}`}}>
+              <div style={{fontSize:11,fontWeight:600,color:sec.color,textTransform:"uppercase",letterSpacing:".07em",marginBottom:8}}>{sec.titulo}</div>
+              {sec.items.map((item,i)=>(
+                <div key={i} style={{display:"flex",gap:8,padding:"7px 10px",background:sec.bg,borderRadius:7,marginBottom:5,borderLeft:`3px solid ${sec.border}`}}>
+                  <span style={{fontSize:10,fontWeight:600,color:sec.color,background:sec.badgeBg,padding:"2px 7px",borderRadius:4,whiteSpace:"nowrap",alignSelf:"flex-start",marginTop:1}}>{item.tag}</span>
+                  <span style={{fontSize:12,color:"#1a1a2e",lineHeight:1.5}}>{item.msg}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+        </>}
+      </>}
+
+      {subTab==="referencia" && (
+        <div style={{background:"#fff",borderRadius:12,padding:"14px 16px",boxShadow:"0 1px 4px rgba(0,0,0,0.06)"}}>
+          <div style={{fontSize:11,color:"#6b7280",marginBottom:12}}>Restricciones exactas según <strong>DTE_v10.xsd + SiiTypes_v10.xsd</strong> oficiales SII Chile</div>
+          {REFS_TAGS.map((s,si)=>(
+            <div key={si} style={{marginBottom:16}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#1e1b4b",padding:"6px 10px",background:"#eef2ff",borderRadius:7,marginBottom:8}}>📋 {s.sec}</div>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
+                <thead><tr style={{background:"#f9fafb"}}>
+                  {["Tag","Req.","Descripción","Largo máx."].map(h=>(
+                    <th key={h} style={{padding:"5px 10px",textAlign:"left",color:"#6366f1",fontWeight:600,border:"1px solid #e5e7eb"}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {s.items.map((item,i)=>(
+                    <tr key={i} style={{background:i%2===0?"#fff":"#fafafa"}}>
+                      <td style={{padding:"5px 10px",border:"1px solid #e5e7eb",fontFamily:"Consolas,monospace",color:"#4338ca",fontWeight:600}}>{item.tag}</td>
+                      <td style={{padding:"5px 10px",border:"1px solid #e5e7eb",textAlign:"center"}}>
+                        <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,fontWeight:600,
+                          background:item.req.startsWith("SÍ")?"#fef2f2":item.req==="COND"?"#fffbeb":"#f0fdf4",
+                          color:item.req.startsWith("SÍ")?"#dc2626":item.req==="COND"?"#d97706":"#16a34a"
+                        }}>{item.req}</span>
+                      </td>
+                      <td style={{padding:"5px 10px",border:"1px solid #e5e7eb",color:"#374151"}}>{item.desc}</td>
+                      <td style={{padding:"5px 10px",border:"1px solid #e5e7eb",textAlign:"center",color:item.max!=="-"?"#d97706":"#9ca3af",fontWeight:item.max!=="-"?600:400}}>{item.max}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function FlexlineAsistente() {
+  const [seccion, setSeccion] = useState("respuestas");
+  const [tab, setTab] = useState("generar");
+  const [situacion, setSituacion] = useState("consulta");
+  const [nombre, setNombre] = useState("");
+  const [modulo, setModulo] = useState("");
+  const [problema, setProblema] = useState("");
+  const [miRespuesta, setMiRespuesta] = useState("");
+  const [respuesta, setRespuesta] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [copiedDesp, setCopiedDesp] = useState(null);
+  const [copiedCont, setCopiedCont] = useState(null);
+  const [copiedPlt, setCopiedPlt] = useState(null);
+  const [copiedPlat, setCopiedPlat] = useState(null);
+  const [copiedDeriv, setCopiedDeriv] = useState(null);
+  const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [moduloActivo, setModuloActivo] = useState("todos");
+  const [despPreview, setDespPreview] = useState(null);
+  const [contPreview, setContPreview] = useState(null);
+  const [platPreview, setPlatPreview] = useState(null);
+  const [derivPreview, setDerivPreview] = useState(null);
+  const [intento, setIntento] = useState(1);
+  const [correccion, setCorreccion] = useState("");
+  const [conocimiento, setConocimiento] = useState([    "Los folios CAF se cargan en: Factura Electrónica → Mantenedor de Parámetros de FE → pestaña Autorizaciones. NO se llama 'Mantenedor de Folios' ni 'Documentos Tributarios'.",
+    "Para desemitir documentos: Factura Electrónica → Administración de Factura Electrónica → pestaña Desemitir Documentos.",
+    "Para configurar tags de FE: Factura Electrónica → Mantenedor de Parámetros → Configuraciones Globales.",
+    "Campos 801-HES (Nº OC, Fecha OC, Nº HES, Fecha HES): se configuran en FE → Mantenedor de Parámetros usando comodín en análisis. El campo VALIDA debe quedar en N porque no valida tablas. Luego marcar en el encabezado del documento y en Análisis Tag de Referencia.",
+    "Para anular folios en Factura Electrónica: Factura Electrónica → Administración de Factura Electrónica (Administrador de DTEs) → pestaña Anular.",
+    "Para crear un vendedor en Flexline: módulo COMUNES → Mantenedor de Códigos Genéricos, ingresar datos del nuevo registro. Tabla correspondiente: GEN_VENDEDOR. Para asociar el vendedor a un cliente: Mantenedor de Cuentas Corrientes → ficha del cliente.",
+    "Para crear un Comprador en Flexline: módulo COMUNES → Mantenedor de Códigos Genéricos, ingresar datos del nuevo registro. Tabla correspondiente: GEN_COMPRADOR. Para asociar el Comprador a un Proveedor: Mantenedor de Cuentas Corrientes → ficha del Proveedor.",
+    "Para consultar documentos por Condición de Pago en Flexline: módulo Compras → Listado de Documentos → filtro Condición de Pago. El sistema mostrará todos los documentos asociados a esa condición.",
+    "Para importar paridades desde WebService en Flexline: Comunes → Mantenedor de Paridades → Administración → Ingreso Paridades Masivas → Importar desde WebService. Seleccionar moneda destino, código WebService y períodos a importar, luego clicar Obtener desde WS → Aceptar → Importar. El API KEY se obtiene desde http://api.sbif.cl/uso-de-api-key.html. Para importar otra moneda, repetir el proceso desde el paso 2 modificando la moneda.",
+    "Para consultar Órdenes de Compra (OC) pendientes y cerradas en Flexline: usar el Panel Diagrama de Sistemas. Acceso desde el menú principal → botón 'Diagrama y Listado' (icono de tabla en barra superior). Luego seleccionar Sistema: Compras → clic en documento ORDEN DE COMPRA. Filtrar por Vigencia: S=pendientes, N=cerradas. Permite personalizar columnas, agrupar por criterios y exportar el listado.",
+    "Para crear un nuevo usuario facturador en Factura Electrónica: Factura Electrónica → Mantenedor de Parámetros de FE → seleccionar un usuario facturador del listado → Importar configuración desde BD → Importar configuración → Guardar.",
+    "Error de schema en cesión de documentos: se debe agregar el e-mail del Cesionario o Cedente en el Mantenedor de Cuentas Corrientes del módulo Comercial. Luego volver a realizar la cesión del documento.",
+    "Para localizar documentos generados con ACEPTA en el servidor: C:\\Acepta\\DTEService\\custodium.com\\dte\\var\\ca4xml\\output\\dump — buscar por carpeta del día y subcarpeta según la hora de generación. El archivo se identifica por el número del documento. Si no está en esa hora, revisar la carpeta anterior o siguiente.",
+    "Para crear una plantilla de comprobante contable en Flexline: 1) Ingresar al Mantenedor de Comprobantes, tabular hasta el final como si se fuera a crear un comprobante, ir a Administración → Consulta de Comprobantes. 2) Elegir el tipo de comprobante que se usará como plantilla. 3) En Opciones → Guardar como Plantilla (Grabar). Para aplicar la plantilla: repetir el paso 1, luego ir a Opciones → Aplicar Plantilla → Consulta de Plantillas → seleccionar la plantilla guardada → Grabar. Nota: al quedar en estado Cuadrado, actualizar con el Actualizador Masivo.",
+  ]);
+  const [guardado, setGuardado] = useState(false);
+  const [xmlInput, setXmlInput] = useState("");
+  const [xmlResultado, setXmlResultado] = useState(null);
+  const [xmlLoading, setXmlLoading] = useState(false);
+
+  const situMap = {
+    consulta: "responder una consulta general del cliente",
+    error: "informar al cliente sobre un error o fallo y orientarlo",
+    factura: "atender al cliente por una consulta de facturación o cobro",
+    usuario: "ayudar al cliente con un problema de acceso o usuario",
+    reporte: "atender al cliente por una consulta de reportes o datos",
+    lento: "atender al cliente que reporta lentitud en el sistema",
+    espera: "informar al cliente que su caso está en revisión y pedirle paciencia",
+    servidor: "explicar amablemente que Flexline está en servidor local y la mantención no corresponde al proveedor de software",
+    otro: "atender una situación general de soporte al cliente",
+  };
+
+  function buildPromptGenerar() {
+    const esRegeneracion = intento > 1;
+    return `Eres un agente de soporte experto del sistema ERP Flexline que atiende por chat.
+
+⚠️ ATENCIÓN — NOMENCLATURA OBLIGATORIA: Usa SIEMPRE estos nombres exactos de menús y rutas de Flexline:
+${conocimiento.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+Tu tarea es redactar una respuesta ${esRegeneracion ? "ALTERNATIVA, más concreta y directa" : "inteligente, empática y técnica"} para: ${situMap[situacion]}.
+
+${esRegeneracion
+  ? `Esta es una regeneración (intento ${intento}). Sé más específico y directo. Pregunta lo más importante o da un paso técnico concreto.`
+  : `Analiza la situación y aplica esta lógica:
+- Si el cliente reporta un ERROR: reconoce el problema y solicita el mensaje de error exacto, desde cuándo ocurre y si afecta a más usuarios.
+- Si la situación es vaga: pide amablemente los antecedentes necesarios.
+- Si tienes suficiente información: da orientación técnica concreta usando los nombres correctos del sistema.`}
+
+Reglas de formato MUY IMPORTANTES:
+- Tono: amable, cercano y cálido, pero con lenguaje técnico apropiado para soporte ERP.
+- Usa terminología técnica de Flexline cuando corresponda (nombres de módulos, menús, procesos).
+- Si la situación describe MÚLTIPLES pasos o acciones, usa numeración (1., 2., 3.) — NO los fusiones en un párrafo.
+- Si hay una sola acción o consulta simple, responde en 2-3 oraciones sin numeración.
+- CRÍTICO: Usa siempre tuteo directo (tú). Ejemplos: "desemite el documento", "me indicas el número", "no lo emitas hasta que te avise". Nunca uses usted ni formas formales.
+- Si hay un nombre disponible, úsalo directamente al inicio (ej: "Mario, para cargar los folios..."). Si no hay nombre, empieza directo con la respuesta sin saludo.
+- Cierra con algo cordial como "Cualquier cosa, aquí estamos 😊".
+- Español neutro latinoamericano.
+- Devuelve SOLO el texto, sin comillas ni explicaciones.
+
+${nombre ? `Nombre del cliente: ${nombre}.` : ""}
+${modulo ? `Módulo Flexline: ${modulo}.` : ""}
+Situación reportada: ${problema || "El cliente no dio detalles, pídele amablemente más información."}`;
+  }
+
+  function agregarConocimiento() {
+    if (!correccion.trim()) return;
+    setConocimiento(prev => [...prev, correccion.trim()]);
+    setCorreccion("");
+    setGuardado(true);
+    setTimeout(() => setGuardado(false), 3000);
+  }
+
+  function eliminarConocimiento(i) {
+    setConocimiento(prev => prev.filter((_, idx) => idx !== i));
+  }
+
+  function buildPromptMejorar() {
+    return `Eres un corrector de respuestas de soporte para el sistema ERP Flexline.
+El agente escribió esta respuesta para un cliente por chat:
+"${miRespuesta}"
+
+Tu tarea es mejorarla respetando estas reglas:
+- CRÍTICO: Mantén SIEMPRE el tuteo directo (tú). Nunca cambies "desemite" por "pre-emita", ni "me indicas" por "me indica", ni "no lo emitas" por "no lo emita". El tono es siempre de tú a tú, cercano y directo.
+- Mantén EXACTAMENTE la misma estructura que usó el agente. Si escribió puntos numerados (1., 2., 3.), consérvalo igual.
+- Si hay pasos o instrucciones múltiples, mantenlos como puntos separados — NO los fusiones en un párrafo.
+- Mejora la redacción para que sea amable, cercana y técnicamente correcta, pero sin formalizar el lenguaje.
+- Usa terminología técnica de Flexline cuando corresponda.
+- NO agregues "¡Hola!" al inicio — el agente ya saludó al cliente previamente.
+- Cierra con algo cordial como "Cualquier cosa, aquí estamos 😊" si no lo tiene.
+- Español neutro latinoamericano, tuteo siempre.
+- Devuelve SOLO el texto mejorado, sin explicaciones ni comillas.`;
+  }
+
+  async function generate() {
+    const campo = tab === "generar" ? problema : miRespuesta;
+    if (!campo.trim()) { setError(tab === "generar" ? "Describe el problema del cliente." : "Escribe tu respuesta para mejorarla."); return; }
+    setError(""); setLoading(true); setRespuesta("");
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model: "claude-sonnet-4-6", max_tokens: 600, messages: [{ role: "user", content: tab === "generar" ? buildPromptGenerar() : buildPromptMejorar() }] }),
+      });
+      const data = await res.json();
+      setRespuesta(data.content?.find(b => b.type === "text")?.text || "No se pudo generar.");
+      if (tab === "generar") setIntento(prev => prev + 1);
+    } catch { setError("Error al generar. Intenta nuevamente."); }
+    setLoading(false);
+  }
+
+  function doCopy(txt, cb) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(cb).catch(() => { fallbackCopy(txt); cb(); });
+    } else { fallbackCopy(txt); cb(); }
+  }
+
+  function fallbackCopy(txt) {
+    const ta = document.createElement("textarea");
+    ta.value = txt; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); } catch(e) {}
+    document.body.removeChild(ta);
+  }
+
+  // Duración dinámica: mínimo 8s, +1s cada 50 caracteres, máximo 20s
+  function previewDuration(texto) {
+    return Math.min(20000, Math.max(8000, Math.floor(texto.length / 50) * 1000 + 8000));
+  }
+
+  function copyDesp(i) {
+    const dur = previewDuration(DESPEDIDAS[i].texto);
+    doCopy(DESPEDIDAS[i].texto, () => {
+      setCopiedDesp(i); setDespPreview(i);
+      setTimeout(() => { setCopiedDesp(null); setDespPreview(null); }, dur);
+    });
+  }
+
+  function copyCont(i) {
+    const dur = previewDuration(CONTENCIONES[i].texto);
+    doCopy(CONTENCIONES[i].texto, () => {
+      setCopiedCont(i); setContPreview(i);
+      setTimeout(() => { setCopiedCont(null); setContPreview(null); }, dur);
+    });
+  }
+
+  function copyPlat(i) {
+    const dur = previewDuration(PLATAFORMA[i].texto);
+    doCopy(PLATAFORMA[i].texto, () => {
+      setCopiedPlat(i); setPlatPreview(i);
+      setTimeout(() => { setCopiedPlat(null); setPlatPreview(null); }, dur);
+    });
+  }
+
+  function copyDeriv(texto, key) {
+    const dur = previewDuration(texto);
+    doCopy(texto, () => {
+      setCopiedDeriv(key); setDerivPreview({ key, texto });
+      setTimeout(() => { setCopiedDeriv(null); setDerivPreview(null); }, dur);
+    });
+  }
+
+  function copyPlt(i) {
+    const dur = previewDuration(TODAS_PLANTILLAS[i].texto);
+    doCopy(TODAS_PLANTILLAS[i].texto, () => {
+      setCopiedPlt(i);
+      setTimeout(() => setCopiedPlt(null), dur);
+    });
+  }
+
+  function limpiar() {
+    setRespuesta(""); setProblema(""); setNombre("");
+    setModulo(""); setError(""); setMiRespuesta("");
+    setIntento(1);
+  }
+
+  const chip = (active) => ({
+    padding: "5px 13px", borderRadius: 20, fontSize: 12, cursor: "pointer",
+    border: active ? "1.5px solid #4338ca" : "1px solid #ddd",
+    background: active ? "#eef2ff" : "#f9fafb", color: active ? "#3730a3" : "#555",
+    fontWeight: active ? 600 : 400, fontFamily: "inherit",
+  });
+
+  const navBtn = (active) => ({
+    padding: "8px 14px", fontSize: 13, cursor: "pointer", borderRadius: 8, border: "none",
+    background: active ? "#4338ca" : "transparent", color: active ? "#fff" : "#c7d2fe",
+    fontWeight: active ? 600 : 400, fontFamily: "inherit", textAlign: "left",
+  });
+
+  const tabStyle = (active) => ({
+    flex: 1, padding: "9px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+    border: "none", fontFamily: "inherit",
+    background: active ? "#4338ca" : "transparent", color: active ? "#fff" : "#555", borderRadius: 7,
+  });
+
+
+  return (
+    <div style={{ fontFamily: "Segoe UI, sans-serif", display: "flex", minHeight: "100vh", background: "#f0f2f7" }}>
+
+      {/* Sidebar */}
+      <div style={{ width: 200, background: "#1e1b4b", display: "flex", flexDirection: "column", padding: 0, flexShrink: 0 }}>
+        <div style={{ padding: "18px 16px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>⚡ Flexline</div>
+          <div style={{ fontSize: 11, color: "#a5b4fc", marginTop: 2 }}>Asistente de Soporte</div>
+        </div>
+        <div style={{ padding: "12px 8px", display: "flex", flexDirection: "column", gap: 3 }}>
+          <div style={{ fontSize: 10, color: "#6366f1", fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", padding: "6px 8px 2px" }}>Herramientas</div>
+          <button onClick={() => setSeccion("respuestas")} style={navBtn(seccion === "respuestas")}>💬 Generar Respuesta</button>
+          <div style={{ fontSize: 10, color: "#6366f1", fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", padding: "10px 8px 2px" }}>Referencia</div>
+          <button onClick={() => setSeccion("plantillas")} style={navBtn(seccion === "plantillas")}>📄 Plantillas Rápidas</button>
+          <div style={{ fontSize: 10, color: "#6366f1", fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", padding: "10px 8px 2px" }}>Herramientas</div>
+          <button onClick={() => setSeccion("validador")} style={navBtn(seccion === "validador")}>⚡ Validador XML DTE</button>
+          <button onClick={() => setSeccion("notas")} style={navBtn(seccion === "notas")}>📌 Notas Técnicas</button>
+          <button onClick={() => setSeccion("derivint")} style={navBtn(seccion === "derivint")}>📋 Derivaciones Internas</button>
+          {seccion === "validador" && (
+            <>
+              <div style={{ fontSize: 9, color: "#6366f1", fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", padding: "10px 8px 2px" }}>Tipos DTE</div>
+              {[[33,"Factura Electrónica"],[34,"Factura No Afecta"],[39,"Boleta Electrónica"],[41,"Boleta No Afecta"],[46,"Factura de Compra"],[52,"Guía de Despacho"],[56,"Nota de Débito"],[61,"Nota de Crédito"]].map(([tipo,nombre])=>(
+                <div key={tipo} style={{padding:"2px 8px",fontSize:10,color:"#a5b4fc",lineHeight:1.5}}>
+                  <span style={{color:"#6366f1",fontWeight:600}}>{tipo}</span> — {nombre.split(" ").slice(0,2).join(" ")}
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Main */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "auto" }}>
+        <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "12px 24px" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "#1e1b4b" }}>
+            {seccion === "respuestas" ? "Generar Respuesta" : seccion === "plantillas" ? "Plantillas Rápidas" : seccion === "validador" ? "Validador XML DTE" : seccion === "notas" ? "Notas Técnicas" : "Derivaciones Internas"}
+          </div>
+          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+            {seccion === "respuestas" ? "Redacta mensajes amables y breves para el chat con clientes Flexline" : seccion === "plantillas" ? "Copia y pega respuestas frecuentes directamente al chat" : seccion === "validador" ? "Valida estructura y tags según esquema oficial SII Chile — DTE_v10.xsd" : seccion === "notas" ? "Rutas, referencias técnicas y consultas frecuentes de Flexline" : "Plantillas para escalar casos técnicos a tu supervisor"}
+          </div>
+        </div>
+
+        <div style={{ padding: "20px 24px" }}>
+
+          {seccion === "respuestas" && <>
+
+            {/* Despedidas */}
+            <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 10 }}>👋 Despedidas rápidas</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {DESPEDIDAS.map((d, i) => (
+                  <button key={i} onClick={() => copyDesp(i)} style={{
+                    padding: "6px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                    border: copiedDesp === i ? "1.5px solid #15803d" : "1px solid #e5e7eb",
+                    background: copiedDesp === i ? "#f0fdf4" : "#f9fafb",
+                    color: copiedDesp === i ? "#15803d" : "#374151",
+                  }}>{copiedDesp === i ? "¡Copiado!" : d.label}</button>
+                ))}
+              </div>
+              {despPreview !== null && (
+                <div style={{ fontSize: 14, color: "#1a1a2e", marginTop: 12, background: "#f0fdf4", padding: "14px 16px", borderRadius: 10, borderLeft: "5px solid #15803d", lineHeight: 1.8, fontStyle: "italic" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#15803d", marginBottom: 6, fontStyle: "normal" }}>📋 Mensaje copiado — listo para pegar en el chat:</div>
+                  {DESPEDIDAS[despPreview].texto}
+                </div>
+              )}
+            </div>
+
+            {/* Contención */}
+            <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#f59e0b", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 10 }}>🤝 Contención al cliente</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {CONTENCIONES.map((c, i) => (
+                  <button key={i} onClick={() => copyCont(i)} style={{
+                    padding: "6px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                    border: copiedCont === i ? "1.5px solid #d97706" : "1.5px solid #fcd34d",
+                    background: copiedCont === i ? "#fef3c7" : "#fffbeb",
+                    color: copiedCont === i ? "#78350f" : "#92400e",
+                  }}>{copiedCont === i ? "¡Copiado!" : c.label}</button>
+                ))}
+              </div>
+              {contPreview !== null && (
+                <div style={{ fontSize: 14, color: "#1a1a2e", marginTop: 12, background: "#fffbeb", padding: "14px 16px", borderRadius: 10, borderLeft: "5px solid #f59e0b", lineHeight: 1.8, fontStyle: "italic" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#92400e", marginBottom: 6, fontStyle: "normal" }}>📋 Mensaje copiado — listo para pegar en el chat:</div>
+                  {CONTENCIONES[contPreview].texto}
+                </div>
+              )}
+            </div>
+
+            {/* Plataforma */}
+            <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#0891b2", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 10 }}>🖥️ Plataforma</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
+                {PLATAFORMA.map((p, i) => (
+                  <button key={i} onClick={() => copyPlat(i)} style={{
+                    padding: "6px 12px", borderRadius: 20, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+                    border: copiedPlat === i ? "1.5px solid #0e7490" : "1.5px solid #a5f3fc",
+                    background: copiedPlat === i ? "#cffafe" : "#ecfeff",
+                    color: copiedPlat === i ? "#164e63" : "#155e75",
+                  }}>{copiedPlat === i ? "¡Copiado!" : p.label}</button>
+                ))}
+              </div>
+              {platPreview !== null && (
+                <div style={{ fontSize: 14, color: "#1a1a2e", marginTop: 12, background: "#ecfeff", padding: "14px 16px", borderRadius: 10, borderLeft: "5px solid #0891b2", lineHeight: 1.8, fontStyle: "italic" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#155e75", marginBottom: 6, fontStyle: "normal" }}>📋 Mensaje copiado — listo para pegar en el chat:</div>
+                  {PLATAFORMA[platPreview].texto}
+                </div>
+              )}
+            </div>
+
+            {/* Derivaciones */}
+            <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#374151", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 12 }}>📋 Derivaciones</div>
+              {DERIVACIONES.map((grupo, gi) => (
+                <div key={gi} style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: grupo.color, marginBottom: 6, letterSpacing: ".05em" }}>{grupo.grupo}</div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {grupo.items.map((item, ii) => {
+                      const key = `${gi}-${ii}`;
+                      return (
+                        <button key={ii} onClick={() => copyDeriv(item.texto, key)} style={{
+                          padding: "5px 11px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                          border: copiedDeriv === key ? `1.5px solid ${grupo.color}` : `1px solid ${grupo.border}`,
+                          background: copiedDeriv === key ? grupo.bg : "#fafafa",
+                          color: copiedDeriv === key ? grupo.color : "#555",
+                          fontWeight: copiedDeriv === key ? 600 : 400,
+                        }}>{copiedDeriv === key ? "¡Copiado!" : item.label}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {derivPreview !== null && (
+                <div style={{ fontSize: 14, color: "#1a1a2e", marginTop: 12, background: "#f9fafb", padding: "14px 16px", borderRadius: 10, borderLeft: "5px solid #6366f1", lineHeight: 1.8, fontStyle: "italic" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#4338ca", marginBottom: 6, fontStyle: "normal" }}>📋 Mensaje copiado — listo para pegar en el chat:</div>
+                  {derivPreview.texto}
+                </div>
+              )}
+            </div>
+
+            {/* Tabs */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 14, background: "#f0f0f0", borderRadius: 10, padding: 4 }}>
+              <button onClick={() => { setTab("generar"); limpiar(); }} style={tabStyle(tab === "generar")}>💬 Generar respuesta</button>
+              <button onClick={() => { setTab("mejorar"); limpiar(); }} style={tabStyle(tab === "mejorar")}>✏️ Mejorar mi respuesta</button>
+            </div>
+
+            {/* Panel Generar */}
+            {tab === "generar" && (
+              <div style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 12 }}>Tipo de situación</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 16 }}>
+                  {SITUACIONES.map(s => <button key={s.val} onClick={() => setSituacion(s.val)} style={chip(situacion === s.val)}>{s.label}</button>)}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>Nombre del cliente (opcional)</label>
+                    <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Carlos, Sra. López…"
+                      style={{ width: "100%", padding: "7px 10px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, boxSizing: "border-box", fontFamily: "inherit" }} />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>Módulo Flexline</label>
+                    <select value={modulo} onChange={e => setModulo(e.target.value)}
+                      style={{ width: "100%", padding: "7px 10px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, boxSizing: "border-box", background: "#fff", fontFamily: "inherit" }}>
+                      {MODULOS.map(m => <option key={m} value={m}>{m || "— General —"}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <label style={{ fontSize: 12, color: "#6b7280", display: "block", marginBottom: 4 }}>¿Qué reporta o pregunta el cliente?</label>
+                <textarea value={problema} onChange={e => setProblema(e.target.value)} rows={3}
+                  placeholder="Ej: No puede emitir boletas, le aparece error 403 desde ayer."
+                  style={{ width: "100%", padding: "7px 10px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                <p style={{ fontSize: 11, color: "#bbb", textAlign: "right", marginTop: 2 }}>{problema.length} caracteres</p>
+              </div>
+            )}
+
+            {/* Panel Mejorar */}
+            {tab === "mejorar" && (
+              <div style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 6 }}>✏️ Pega tu respuesta aquí</div>
+                <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 10 }}>Escribe lo que le dirías al cliente y lo mejoramos para que quede ameno, breve y cordial.</p>
+                <textarea value={miRespuesta} onChange={e => setMiRespuesta(e.target.value)} rows={4}
+                  placeholder="Ej: Karin, el problema es que el período está cerrado y por eso no puedes registrar el documento."
+                  style={{ width: "100%", padding: "7px 10px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+                <p style={{ fontSize: 11, color: "#bbb", textAlign: "right", marginTop: 2 }}>{miRespuesta.length} caracteres</p>
+              </div>
+            )}
+
+            {error && <p style={{ color: "#dc2626", fontSize: 13, marginBottom: 10, padding: "8px 12px", background: "#fef2f2", borderRadius: 6, borderLeft: "3px solid #dc2626" }}>{error}</p>}
+
+            <button onClick={generate} disabled={loading} style={{
+              width: "100%", padding: "11px", fontSize: 14, fontWeight: 600, cursor: loading ? "default" : "pointer",
+              borderRadius: 9, background: loading ? "#9ca3af" : "#4338ca", color: "#fff", border: "none", fontFamily: "inherit", marginBottom: 14,
+            }}>
+              {loading ? "Procesando…" : tab === "generar" ? "Generar respuesta ↗" : "Mejorar mi respuesta ↗"}
+            </button>
+
+            {respuesta && (
+              <div style={{ background: "#f5f3ff", border: "1.5px solid #c7d2fe", borderRadius: 12, padding: "16px 18px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "#4338ca" }}>✓ {tab === "generar" ? "Respuesta lista para enviar" : "Respuesta mejorada lista para enviar"}</div>
+                  <div style={{ fontSize: 10, color: "#9ca3af" }}>💡 Selecciona el texto que quieras copiar, o usa los botones</div>
+                </div>
+                <textarea
+                  readOnly
+                  value={respuesta}
+                  style={{ width: "100%", fontSize: 14, lineHeight: 1.8, color: "#1a1a2e", whiteSpace: "pre-wrap", background: "#fff", borderRadius: 8, padding: "12px 14px", border: "1px solid #e0e7ff", resize: "none", fontFamily: "inherit", boxSizing: "border-box", cursor: "text", minHeight: 120 }}
+                  rows={Math.max(4, respuesta.split("\n").length + 1)}
+                />
+                <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                  <button onClick={() => doCopy(respuesta, () => { setCopied(true); setTimeout(() => setCopied(false), 2000); })}
+                    style={{ flex: 1, padding: "8px", fontSize: 13, cursor: "pointer", borderRadius: 8, background: copied ? "#4338ca" : "#fff", border: "1.5px solid #c7d2fe", color: copied ? "#fff" : "#4338ca", fontWeight: 500, fontFamily: "inherit" }}>
+                    {copied ? "✓ ¡Copiado!" : "📋 Copiar todo"}
+                  </button>
+                  <button onClick={generate} style={{ flex: 1, padding: "8px", fontSize: 13, cursor: "pointer", borderRadius: 8, background: "#fff", border: "1.5px solid #c7d2fe", color: "#4338ca", fontWeight: 500, fontFamily: "inherit" }}>Regenerar</button>
+                  <button onClick={limpiar} style={{ flex: 1, padding: "8px", fontSize: 13, cursor: "pointer", borderRadius: 8, background: "#4338ca", border: "none", color: "#fff", fontWeight: 500, fontFamily: "inherit" }}>Nueva</button>
+                </div>
+              </div>
+            )}
+
+            {/* BASE DE CONOCIMIENTO */}
+            <div style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginTop: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)", border: "1px dashed #c7d2fe" }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 6 }}>📚 Base de conocimiento Flexline</div>
+              <p style={{ fontSize: 11, color: "#9ca3af", marginBottom: 10, lineHeight: 1.5 }}>
+                ¿La respuesta generada tiene un nombre de menú incorrecto? Corrígelo acá y quedará guardado para futuras respuestas.
+              </p>
+
+              {/* Lista de conocimiento actual */}
+              {conocimiento.map((c, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 6, background: "#f5f3ff", borderRadius: 8, padding: "7px 10px" }}>
+                  <span style={{ fontSize: 11, color: "#4338ca", flex: 1, lineHeight: 1.5 }}>📍 {c}</span>
+                  <button onClick={() => eliminarConocimiento(i)} style={{ fontSize: 11, color: "#dc2626", background: "none", border: "none", cursor: "pointer", padding: "0 4px", flexShrink: 0 }}>✕</button>
+                </div>
+              ))}
+
+              {/* Campo para agregar */}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <input
+                  type="text"
+                  value={correccion}
+                  onChange={e => setCorreccion(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && agregarConocimiento()}
+                  placeholder="Ej: Los folios CAF se cargan en FE → Mantenedor de Parámetros → pestaña Autorizaciones"
+                  style={{ flex: 1, padding: "7px 10px", border: "1.5px solid #c7d2fe", borderRadius: 8, fontSize: 12, fontFamily: "inherit" }}
+                />
+                <button onClick={agregarConocimiento} style={{
+                  padding: "7px 14px", background: guardado ? "#15803d" : "#4338ca", color: "#fff",
+                  border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap"
+                }}>
+                  {guardado ? "✓ Guardado" : "Agregar"}
+                </button>
+              </div>
+            </div>
+
+          </>}
+
+          {seccion === "plantillas" && (
+            <div style={{ background: "#fff", borderRadius: 12, padding: "16px 18px", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+
+              {/* Selector de módulo */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+                <button onClick={() => { setModuloActivo("todos"); setBusqueda(""); }} style={{
+                  padding: "5px 12px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                  border: moduloActivo === "todos" ? "1.5px solid #4338ca" : "1px solid #ddd",
+                  background: moduloActivo === "todos" ? "#eef2ff" : "#f9fafb",
+                  color: moduloActivo === "todos" ? "#3730a3" : "#555", fontWeight: moduloActivo === "todos" ? 600 : 400,
+                }}>🔍 Todos</button>
+                {MODULOS_PLANTILLAS.map((m, i) => (
+                  <button key={i} onClick={() => { setModuloActivo(m.modulo); setBusqueda(""); }} style={{
+                    padding: "5px 12px", borderRadius: 20, fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                    border: moduloActivo === m.modulo ? "1.5px solid #4338ca" : "1px solid #ddd",
+                    background: moduloActivo === m.modulo ? "#eef2ff" : "#f9fafb",
+                    color: moduloActivo === m.modulo ? "#3730a3" : "#555", fontWeight: moduloActivo === m.modulo ? 600 : 400,
+                  }}>{m.modulo}</button>
+                ))}
+              </div>
+
+              {/* Buscador */}
+              <input value={busqueda} onChange={e => { setBusqueda(e.target.value); setModuloActivo("todos"); }} placeholder="🔍 Buscar plantilla..."
+                style={{ width: "100%", padding: "8px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, marginBottom: 14, boxSizing: "border-box", fontFamily: "inherit" }} />
+
+              {/* Plantillas filtradas */}
+              {MODULOS_PLANTILLAS
+                .filter(m => moduloActivo === "todos" || m.modulo === moduloActivo)
+                .map(m => ({
+                  ...m,
+                  items: m.items.filter(p => !busqueda || p.tag.toLowerCase().includes(busqueda.toLowerCase()) || p.texto.toLowerCase().includes(busqueda.toLowerCase()))
+                }))
+                .filter(m => m.items.length > 0)
+                .map((m, mi) => (
+                  <div key={mi} style={{ marginBottom: 20 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#1e1b4b", marginBottom: 10, padding: "8px 12px", background: "#eef2ff", borderRadius: 8 }}>
+                      {m.modulo} <span style={{ fontWeight: 400, color: "#6b7280", fontSize: 11, marginLeft: 6 }}>{m.items.length} plantilla{m.items.length !== 1 ? "s" : ""}</span>
+                    </div>
+                    {m.items.map((p, pi) => {
+                      const idx = TODAS_PLANTILLAS.findIndex(x => x.tag === p.tag && x.texto === p.texto);
+                      return (
+                        <div key={pi} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px", marginBottom: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                            <span style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".06em" }}>{p.tag}</span>
+                            <button onClick={() => copyPlt(idx)} style={{
+                              fontSize: 12, padding: "4px 12px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
+                              border: copiedPlt === idx ? "1px solid #15803d" : "1px solid #c7d2fe",
+                              background: copiedPlt === idx ? "#f0fdf4" : "#eef2ff",
+                              color: copiedPlt === idx ? "#15803d" : "#4338ca", fontWeight: 500,
+                            }}>{copiedPlt === idx ? "¡Copiado!" : "Copiar"}</button>
+                          </div>
+                          <p style={{ fontSize: 13, lineHeight: 1.7, color: "#374151", margin: 0 }}>{p.texto}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))
+              }
+            </div>
+          )}
+
+          {seccion === "notas" && (() => {
+            const NOTAS = [
+              {
+                titulo: "📁 Rutas CAF y Certificado — Acepta Local",
+                color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
+                items: [
+                  { label: "📂 Ruta CAF (folios)", contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\caf", nota: "Los folios se bajan en formato XML desde el SII y se deben transformar a formato PEM desde ACEPTA antes de copiarlos." },
+                  { label: "🔗 Link conversión CAF a PEM", contenido: "https://acg4.acepta.com/acvt2/servlet/gencafcert", nota: "Enlace oficial para convertir archivos CAF de formato XML a PEM.", esLink: true },
+                  { label: "📂 Ruta Firma Digital (certificado)", contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\pki", nota: "Aquí se sube la firma digital del representante legal." },
+                ]
+              },
+              {
+                titulo: "🏢 Contribuyentes Autorizados para Emitir DTE",
+                color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc",
+                items: [
+                  { label: "🔗 Consulta en SII — Empresas autorizadas DTE", contenido: "https://palena.sii.cl/cvc/dte/ee_empresas_dte.html", nota: "Link oficial del SII para verificar si un contribuyente está autorizado para emitir documentos tributarios electrónicos.", esLink: true },
+                ]
+              },
+              {
+                titulo: "📤 Subir XML Manualmente al SII",
+                color: "#059669", bg: "#f0fdf4", border: "#6ee7b7",
+                items: [
+                  { label: "🔗 Link carga manual de XML — SII", contenido: "https://palena.sii.cl/cgi_dte/UPL/DTEauth?1", nota: "Usar cuando un documento no llegó al SII por los canales normales y se necesita subir el XML directamente.", esLink: true },
+                ]
+              },
+              {
+                titulo: "🔐 Conversión Certificado P12/PFX a PEM — Herramienta P12toPEM",
+                color: "#0891b2", bg: "#ecfeff", border: "#a5f3fc",
+                items: [
+                  { label: "🛠️ Aplicación P12toPEM", contenido: "Herramienta: p12topem.exe (incluye OpenSSL para Windows). Archivos requeridos: libeay32.dll, libssl32.dll, openssl.exe, p12topem.exe, ssleay32.dll", nota: "Todos los archivos deben estar en la misma carpeta para que funcione correctamente." },
+                  { label: "📋 Pasos para convertir certificado", contenido: "1. Ejecutar p12topem.exe\n2. Seleccionar el archivo .p12 o .pfx del certificado\n3. Ingresar la contraseña del certificado\n4. El archivo .pem generado se copia a la ruta: C:\\Acepta\\DTEService\\custodium.com\\dte\\etc\\cert\\pki", nota: "El archivo .pem es la firma digital del representante legal requerida por ACEPTA." },
+                  { label: "🔗 Link alternativo conversión CAF a PEM (ACEPTA online)", contenido: "https://acg4.acepta.com/acvt2/servlet/gencafcert", nota: "Para conversión de folios CAF desde XML a PEM — distinto al certificado del representante legal.", esLink: true },
+                ]
+              },
+              {
+                titulo: "📂 Documentos Generados con ACEPTA — Ruta del servidor",
+                color: "#7c3aed", bg: "#f5f3ff", border: "#c4b5fd",
+                items: [
+                  {
+                    label: "📂 Ruta base documentos ACEPTA",
+                    contenido: "C:\\Acepta\\DTEService\\custodium.com\\dte\\var\\ca4xml\\output\\dump",
+                    nota: "En esta carpeta se generan los documentos del día. Cada subcarpeta corresponde a la hora en que se generó el documento. Si no está en la carpeta de esa hora, puede estar en la anterior o siguiente según día y hora."
+                  },
+                  {
+                    label: "🔍 Cómo localizar un documento",
+                    contenido: "1. Ingresar a la ruta base del servidor\n2. Abrir la carpeta del día actual (documentos generados hoy)\n3. Seleccionar la subcarpeta según la hora de generación del documento\n4. Identificar el archivo por el número del documento\n5. Si no está, revisar la carpeta anterior o siguiente",
+                    nota: "Todos los clientes ACEPTA operan de la misma manera con esta estructura de carpetas."
+                  },
+                ]
+              },
+              {
+                titulo: "📋 Cesión de Documentos — Error de Schema",
+                color: "#dc2626", bg: "#fef2f2", border: "#fca5a5",
+                items: [
+                  { label: "⚠️ Error de schema al ceder documento", contenido: "Solución: agregar el e-mail al Cesionario o Cedente del documento.", nota: "Se debe ingresar el e-mail en el Mantenedor de Cuentas Corrientes del módulo Comercial. Una vez ingresado, volver a realizar la cesión del documento." },
+                ]
+              },
+              {
+                titulo: "🚚 Resolución SII N°154 — Guías de Despacho (vigente desde 01-05-2026)",
+                color: "#d97706", bg: "#fffbeb", border: "#fcd34d",
+                items: [
+                  { label: "📋 Tags obligatorios nuevos — tipo 52", contenido: "FchSalida: Fecha inicio traslado | HraSalida: Hora inicio traslado | FchLlegada: Fecha llegada | RUTTrans: RUT transportista | PatenteCarro: Patente carro anexo", nota: "Obligatorios desde el 01-05-2026 según Res. Ex. SII N°154." },
+                  { label: "🔢 IndTraslado — valores válidos", contenido: "1=Operación constituye venta | 2=Ventas por efectuar | 3=Consignaciones | 4=Entrega gratuita | 5=Traslados internos | 6=Otros traslados no venta | 7=Venta para exportación | 8=Traslado para exportación (No venta)", nota: "Debe indicarse en forma clara y precisa en la Guía de Despacho." },
+                  { label: "📌 Reglas vigencia Guía de Despacho", contenido: "1 guía por traslado y vehículo. Si dura más de 1 día: indicar en detalle y fecha estimada entrega. Traslados parciales: usar IndTraslado=2 (Ventas por efectuar).", nota: "La fecha y hora de la guía debe corresponder al inicio del traslado." },
+                  { label: "✅ Verificar validez DTE receptor", contenido: "https://www.sii.cl → Servicios Online → Factura electrónica → Consultas DTE → Consultar validez de un documento", nota: "El receptor puede verificar el documento ingresando: RUT emisor, RUT receptor, tipo, folio, fecha y monto total.", esLink: false },
+                ]
+              },
+            ];
+            return (
+              <div>
+                {NOTAS.map((secNota, si) => (
+                  <div key={si} style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: secNota.color, padding: "6px 10px", background: secNota.bg, borderRadius: 8, marginBottom: 12, border: `1px solid ${secNota.border}` }}>{secNota.titulo}</div>
+                    {secNota.items.map((item, ii) => (
+                      <div key={ii} style={{ background: "#fafafa", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: "#6366f1", textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 6 }}>{item.label}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: item.nota ? 6 : 0 }}>
+                          {item.esLink
+                            ? <a href={item.contenido} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: "#4338ca", fontFamily: "Consolas, monospace", wordBreak: "break-all", flex: 1 }}>{item.contenido}</a>
+                            : <code style={{ fontSize: 12, color: "#1e1b4b", background: "#eef2ff", padding: "4px 8px", borderRadius: 6, flex: 1, display: "block", wordBreak: "break-all", fontFamily: "Consolas, monospace" }}>{item.contenido}</code>
+                          }
+                          <CopyButton texto={item.contenido} />
+                        </div>
+                        {item.nota && <div style={{ fontSize: 11, color: "#6b7280", lineHeight: 1.5, borderTop: "1px solid #f3f4f6", paddingTop: 6 }}>💡 {item.nota}</div>}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {seccion === "derivint" && (
+            <div>
+              <div style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#854d0e" }}>
+                ⚠️ <strong>Uso interno</strong> — estas plantillas son para escalar casos a tu supervisor, no para enviar a clientes. Reemplaza los campos entre corchetes [COMO ESTE] con los datos reales antes de enviar.
+              </div>
+              {DERIVACIONES_INTERNAS.map((grupo, gi) => (
+                <div key={gi} style={{ background: "#fff", borderRadius: 12, padding: "14px 18px", marginBottom: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: grupo.color, textTransform: "uppercase", letterSpacing: ".07em", marginBottom: 12 }}>{grupo.grupo}</div>
+                  {grupo.items.map((item, ii) => (
+                    <div key={ii} style={{ background: "#fafafa", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px", marginBottom: 10 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: grupo.color, textTransform: "uppercase", letterSpacing: ".06em" }}>{item.label}</span>
+                        <CopyButton texto={item.texto} />
+                      </div>
+                      <pre style={{ fontSize: 12, lineHeight: 1.7, color: "#374151", margin: 0, whiteSpace: "pre-wrap", fontFamily: "inherit", background: "#fff", padding: "10px 12px", borderRadius: 8, border: "1px solid #e0e7ff" }}>{item.texto}</pre>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {seccion === "validador" && (
+            <ValidadorXMLSection
+              xmlInput={xmlInput} setXmlInput={setXmlInput}
+              xmlResultado={xmlResultado} setXmlResultado={setXmlResultado}
+              xmlLoading={xmlLoading} setXmlLoading={setXmlLoading}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(React.createElement(FlexlineAsistente));
+  </script>
+</body>
+</html>
